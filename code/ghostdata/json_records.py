@@ -61,6 +61,20 @@ def _truthy_text(value) -> bool:
     return isinstance(value, str) and bool(value.strip()) and value.strip().lower() != "null"
 
 
+def _privacy_flags(
+    kind: str,
+    identifiable: bool,
+) -> tuple[bool, bool | None, bool | None]:
+    """Return explicit identifier presence and applicable privacy treatment."""
+    if identifiable:
+        return True, None, None
+    if kind in {"ACCOUNT_TOMBSTONE", "SUPPORT_MESSAGE", "EMAIL_DELIVERY_LOG"}:
+        return False, True, None
+    if kind in {"ANALYTICS_PROFILE", "PRODUCT_TELEMETRY"}:
+        return False, None, True
+    return False, None, None
+
+
 def parse_lookup_record(
     *,
     file_id: str,
@@ -171,10 +185,13 @@ def parse_structured_record(
         if anonymized:
             identifiable = False
     elif collection in _STRUCTURED_COLLECTIONS:
-        present = True
-        identifiable = (any_identifier or None)
-        if collection in ("deleted_customer_references", "support_conversations") and kind == "ACCOUNT_TOMBSTONE":
-            pass
+        if collection == "customer_export_jobs" and "download_available" in record:
+            present = _bool(record.get("download_available"))
+        else:
+            present = True
+        identifiable, inferred_redacted, inferred_anonymized = _privacy_flags(kind, any_identifier)
+        redacted = inferred_redacted
+        anonymized = inferred_anonymized
     return Observation(
         file_id=file_id,
         source_path=source_path,
@@ -263,7 +280,11 @@ def parse_records_document(path: Path, file_id: str, dataset_relative: str) -> E
                     source_kind="json",
                     captured_at=captured_at,
                     collection=collection,
-                    data_store=doc.get("data_store") or doc.get("origin"),
+                    data_store=(
+                        doc.get("data_store")
+                        or doc.get("origin")
+                        or doc.get("source")
+                    ),
                     record=record,
                     default_observed_at=default_observed_at,
                 )
@@ -357,9 +378,13 @@ def _parse_service_exports(doc: dict, records: list, notes: list, captured_at, f
                     and attributes.get(f).strip().lower() != "null"
                     for f in ident_fields
                 )
-                identifiable = (any_identifier or None) if kind in (
-                    "ANALYTICS_PROFILE", "SUPPORT_MESSAGE", "ACCOUNT_TOMBSTONE"
-                ) else None
+                if kind in (
+                    "ANALYTICS_PROFILE", "SUPPORT_MESSAGE", "ACCOUNT_TOMBSTONE",
+                    "EMAIL_DELIVERY_LOG", "PRODUCT_TELEMETRY",
+                ):
+                    identifiable, redacted, anonymized = _privacy_flags(kind, any_identifier)
+                else:
+                    identifiable, redacted, anonymized = None, None, None
                 records.append(
                     Observation(
                         file_id=file_id,
@@ -375,8 +400,8 @@ def _parse_service_exports(doc: dict, records: list, notes: list, captured_at, f
                         enabled=enabled if kind == "DATA_FLOW" else None,
                         restore_allowed=restore_allowed if kind == "BACKUP_ARCHIVE" else None,
                         identifiable=identifiable,
-                        redacted=None,
-                        anonymized=None,
+                        redacted=redacted,
+                        anonymized=anonymized,
                         retention_until=parse_iso(attributes.get("retention_until")),
                         account_status=attributes.get("account_status"),
                         attributes=attributes,

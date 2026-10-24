@@ -23,6 +23,20 @@ def _obs(captured_at, observed_at=None):
 
 
 class TestCutoff(unittest.TestCase):
+    def test_multimodal_evidence_is_parsed_explicitly(self):
+        ledger = EvidenceLedger().build()
+        pdf = ledger.file_by_id("evidence_58")
+        self.assertIsNotNone(pdf)
+        self.assertEqual(pdf.parser_kind, "pdf")
+        support = next(obs for obs in pdf.records if obs.resource_id == "support_001")
+        self.assertEqual(support.kind, "SUPPORT_ATTACHMENT")
+        self.assertTrue(support.identifiable)
+
+        png = ledger.file_by_id("evidence_23")
+        self.assertIsNotNone(png)
+        self.assertEqual(png.parser_kind, "png")
+        self.assertEqual(png.records[0].attributes["evidence_status"], "UNREADABLE")
+
     def test_censored_after_audit_at(self):
         audit_at = datetime(2026, 9, 15, 12, 0, tzinfo=timezone.utc)
         check = EvidenceLedger.usable_at(audit_at)

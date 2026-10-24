@@ -32,6 +32,7 @@ SYSTEM_ID_MAP = {
     "identity_service": "identity_service",
     "email_delivery_service": "email_delivery_service",
     "cache_service": "cache_service",
+    "user_export_store": "export_service",
 }
 
 def normalize_system_id(system: str) -> str:

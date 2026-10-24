@@ -41,6 +41,7 @@ def parse_all_evidence() -> tuple[list[EvidenceFile], list[ActivityEvent]]:
     """Parse every manifest file according to its suffix."""
     from .json_records import parse_records_document
     from .logfiles import parse_log_file
+    from .pdfdocs import parse_pdf_document, unreadable_png
     from .sqlsnapshots import parse_sql_snapshot
     from .textdocs import parse_txt_document
 
@@ -69,8 +70,22 @@ def parse_all_evidence() -> tuple[list[EvidenceFile], list[ActivityEvent]]:
             ef.origin = skeleton.origin
         elif suffix == ".txt":
             ef = parse_txt_document(real_path, common["file_id"], dataset_relative, skeleton.origin)
+        elif suffix == ".pdf":
+            ef = parse_pdf_document(
+                real_path,
+                skeleton.file_id,
+                dataset_relative,
+                skeleton.captured_at,
+                skeleton.origin,
+            )
+        elif suffix == ".png":
+            ef = unreadable_png(
+                skeleton.file_id,
+                dataset_relative,
+                skeleton.captured_at,
+                skeleton.origin,
+            )
         else:
-            # PDF / PNG handled by the multimodal stage (M3).
             ef = EvidenceFile(
                 file_id=skeleton.file_id,
                 path=dataset_relative,
@@ -78,7 +93,7 @@ def parse_all_evidence() -> tuple[list[EvidenceFile], list[ActivityEvent]]:
                 captured_at=skeleton.captured_at,
                 parser_kind=suffix.lstrip("."),
                 records=[],
-                notes=["multimodal: facts extracted in a later milestone"],
+                notes=["unsupported evidence format"],
             )
         # Keep manifest capture time as authoritative when the file itself
         # does not declare one; never let parser output push it later.

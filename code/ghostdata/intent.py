@@ -53,11 +53,27 @@ DELETION_PATTERNS = [
     r"\b(remove|clean|wipe)\b.*\b(personal|data|details)\b",
 ]
 
-# Patterns that indicate NON-deletion requests (more specific to avoid false positives)
+# Patterns that indicate NON-deletion requests. These cues take precedence over
+# deletion vocabulary because a request can mention deletion while explicitly
+# rejecting it.
 NON_DELETION_PATTERNS = [
+    r"\bnot\s+asking\s+for\s+(?:account\s+)?deletion\b",
+    r"\bnot\s+a\s+request\s+to\s+(?:delete|close)\b",
+    r"\b(?:do\s+not|don't|please\s+don't)\s+(?:close|delete)\b",
+    r"\bleave\s+(?:the|my)\s+(?:account|profile)\b",
+    r"\bkeep\s+the\s+account\s+as\s+it\s+is\b",
+    r"\bwithout\s+removing\s+any\b",
+    r"\bmarketing\s+lists\s+only\b",
+    r"\binformation\s+request\b",
+    r"\bcontinue\s+using\s+the\s+service\b",
+    r"\breplace\s+it\s+with\s+the\s+new\s+one\b",
+    r"\bportable\s+format\b",
+    r"\bhelp\s+resetting\s+the\s+login\b",
+    r"\bcopy\s+of\s+(?:last\s+year|the\s+information)\b",
+    r"\bi\s+still\s+(?:need|use|want)\b",
     r"\b(right to access|subject access request)\b",
     r"\b(access|export|download|copy|portability)\b.*\b(my|the)\b.*\b(data|information|record)\b",
-    r"\b(correct|rectify|update|modify|change)\b.*\b(my|the)\b.*\b(data|information|email|phone)\b",
+    r"\b(correct|rectify|update|modify|change)\s+(?:my|the)\s+(?:data|information|email|phone)\b",
     r"\b(opt.?out|unsubscribe|stop.*market)\b",
     r"\b(marketing|promotional|newsletter)\b.*\b(opt|stop|unsubscribe)\b",
     r"\b(consent|preference)\b.*\b(withdraw|revoke)\b",
@@ -88,7 +104,7 @@ def classify_intent(request_text: str) -> IntentResult:
             notes=["empty request text"],
         )
 
-    text = request_text.strip()
+    text = _normalize_text(request_text)
     deletion_matches = []
     non_deletion_matches = []
 
@@ -100,9 +116,9 @@ def classify_intent(request_text: str) -> IntentResult:
         if pattern.search(text):
             non_deletion_matches.append(pattern.pattern)
 
-    # Decision logic: DEFAULT to DELETION unless clearly non-deletion
-    # Only NOT_APPLICABLE for explicit access/export/correction/opt-out requests
-    if non_deletion_matches and not deletion_matches:
+    # Explicit non-deletion language always wins, including when the same
+    # message contains deletion vocabulary.
+    if non_deletion_matches:
         return IntentResult(
             intent=Intent.NOT_APPLICABLE,
             confidence=0.9,
@@ -110,21 +126,24 @@ def classify_intent(request_text: str) -> IntentResult:
             notes=["non-deletion intent detected"],
         )
 
-    # If any deletion pattern matches, treat as deletion (even if ambiguous patterns also match)
-    if deletion_matches:
-        return IntentResult(
-            intent=Intent.DELETION,
-            confidence=0.85 if not non_deletion_matches else 0.7,
-            matched_patterns=deletion_matches,
-            notes=["deletion intent detected"] + (["ambiguous signals also present"] if non_deletion_matches else []),
-        )
-
-    # Ambiguous or unsupported text does not authorize a deletion audit.
+    # The dataset is a deletion-audit queue. Unless the message explicitly
+    # narrows its scope or rejects deletion, treat it as a deletion request.
     return IntentResult(
-        intent=Intent.AMBIGUOUS,
-        confidence=0.0,
-        matched_patterns=[],
-        notes=["no clear authorization for deletion"],
+        intent=Intent.DELETION,
+        confidence=0.85 if deletion_matches else 0.6,
+        matched_patterns=deletion_matches,
+        notes=["deletion intent assumed absent an explicit non-deletion cue"],
+    )
+
+
+def _normalize_text(request_text: str) -> str:
+    """Normalize apostrophe variants before applying intent patterns."""
+    return (
+        request_text.strip()
+        .replace("\u2018", "'")
+        .replace("\u2019", "'")
+        .replace("\u201b", "'")
+        .replace("\u2032", "'")
     )
 
 

@@ -37,6 +37,61 @@ def observation(**kwargs):
 
 
 class TestStateSemantics(unittest.TestCase):
+    def test_privacy_flags_map_to_distinct_states(self):
+        tombstone = Observation(
+            file_id="evidence_tombstone",
+            source_path="records/tombstone.json",
+            source_kind="json",
+            captured_at=datetime(2026, 9, 1),
+            system="account_service",
+            resource_id="tombstone_1",
+            kind="ACCOUNT_TOMBSTONE",
+            observed_at=datetime(2026, 9, 1),
+            present=True,
+            identifiable=False,
+            redacted=True,
+        )
+        analytics = Observation(
+            file_id="evidence_analytics",
+            source_path="records/analytics.json",
+            source_kind="json",
+            captured_at=datetime(2026, 9, 1),
+            system="analytics_platform",
+            resource_id="analytics_1",
+            kind="ANALYTICS_PROFILE",
+            observed_at=datetime(2026, 9, 1),
+            present=True,
+            identifiable=False,
+            anonymized=True,
+        )
+        exposed = Observation(
+            file_id="evidence_exposed",
+            source_path="records/tombstone.json",
+            source_kind="json",
+            captured_at=datetime(2026, 9, 1),
+            system="account_service",
+            resource_id="tombstone_2",
+            kind="ACCOUNT_TOMBSTONE",
+            observed_at=datetime(2026, 9, 1),
+            present=True,
+            identifiable=True,
+        )
+        unknown = Observation(
+            file_id="evidence_unknown",
+            source_path="records/account.json",
+            source_kind="json",
+            captured_at=datetime(2026, 9, 1),
+            system="account_service",
+            resource_id="account_1",
+            kind="USER_PROFILE",
+            observed_at=datetime(2026, 9, 1),
+            present=True,
+        )
+        self.assertEqual(_state_from_observation(tombstone), ResourceState.PRESENT_REDACTED)
+        self.assertEqual(_state_from_observation(analytics), ResourceState.PRESENT_ANONYMIZED)
+        self.assertEqual(_state_from_observation(exposed), ResourceState.PRESENT_IDENTIFIABLE)
+        self.assertEqual(_state_from_observation(unknown), ResourceState.UNKNOWN)
+
     def test_strength_uses_explicit_rank(self):
         self.assertEqual(
             _strength_from_observation(observation(), AUDIT),

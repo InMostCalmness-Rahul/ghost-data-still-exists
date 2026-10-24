@@ -8,6 +8,8 @@ Available commands:
                          recovered with what sample_output.csv cites
 * ``evaluate-samples`` - run the deterministic decision engine on public samples
                          without writing output artifacts
+* ``diff-samples``    - print grouped expected-vs-actual sample differences
+                         without writing output artifacts
 
 The final 518-case output run is intentionally not exposed by this CLI until
 the output validator and final-run readiness checks are complete.
@@ -224,6 +226,21 @@ def command_evaluate_samples() -> int:
     return 0 if full_matches == total else 1
 
 
+def command_diff_samples(case_ids: list[str]) -> int:
+    """Print grouped public-sample differences without writing files."""
+    from evaluation.regression import print_diff, run_diff
+
+    results = run_diff(case_ids or None)
+    if case_ids:
+        found = {result.case_id for result in results}
+        missing = sorted(set(case_ids) - found)
+        if missing:
+            print(f"unknown sample case IDs: {', '.join(missing)}", file=sys.stderr)
+            return 2
+    print_diff(results, show_steps=bool(case_ids))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Ghost Data Still Exists deterministic audit agent")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -234,6 +251,11 @@ def main(argv: list[str] | None = None) -> int:
         "evaluate-samples",
         help="evaluate the decision engine on 32 samples without writing output",
     )
+    diff_parser = sub.add_parser(
+        "diff-samples",
+        help="show grouped sample differences without writing output",
+    )
+    diff_parser.add_argument("case_ids", nargs="*", help="optional sample IDs, e.g. case_26")
     args = parser.parse_args(argv)
     if args.command == "selftest":
         return command_selftest()
@@ -243,6 +265,8 @@ def main(argv: list[str] | None = None) -> int:
         return command_validate_samples()
     if args.command == "evaluate-samples":
         return command_evaluate_samples()
+    if args.command == "diff-samples":
+        return command_diff_samples(args.case_ids)
     parser.error(f"unsupported command: {args.command}")
     return 2
     return 2

@@ -106,6 +106,8 @@ def reidentify_value(kind: str, value: str) -> str:
     """
     if kind == "email" and value.lower().startswith("user_") and not EMAIL_IN_TEXT.fullmatch(value):
         return "user_id"
+    if kind == "email" and re.fullmatch(r"[0-9a-fA-F]{64}", value):
+        return "email_hash"
     if kind == "user_id" and EMAIL_IN_TEXT.fullmatch(value):
         return "email"
     return kind

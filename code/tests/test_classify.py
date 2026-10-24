@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import unittest
+import csv
+from pathlib import Path
 
 from ghostdata.classify import (
     extract_refs,
@@ -38,6 +40,7 @@ class TestClassify(unittest.TestCase):
         self.assertEqual(reidentify_value("email", "user_524"), "user_id")
         self.assertEqual(reidentify_value("user_id", "a.b@example.com"), "email")
         self.assertEqual(reidentify_value("email", "a.b@example.com"), "email")
+        self.assertEqual(reidentify_value("email", "a" * 64), "email_hash")
 
     def test_owner_refs_from_record(self):
         refs = owner_refs_from_record(
@@ -83,10 +86,48 @@ class TestClassify(unittest.TestCase):
         self.assertEqual(ref.value, "a@b.com")
         self.assertEqual(ref.role, "owner")
 
-    def test_unmatched_intent_is_ambiguous(self):
+    def test_unmatched_intent_defaults_to_deletion(self):
         result = classify_intent("Please help me with my account.")
-        self.assertEqual(result.intent, Intent.AMBIGUOUS)
-        self.assertFalse(is_deletion_authorized("Please help me with my account.")[0])
+        self.assertEqual(result.intent, Intent.DELETION)
+        self.assertTrue(is_deletion_authorized("Please help me with my account.")[0])
+
+    def test_explicit_non_deletion_cues_override_deletion_words(self):
+        requests = [
+            "I am not asking for account deletion; I still need the account.",
+            "Please don't delete the account. I want to continue using the service.",
+            "Please export my data in a portable format and leave the account as it is.",
+            "This is an information request, not a request to delete the account.",
+        ]
+        for request in requests:
+            with self.subTest(request=request):
+                result = classify_intent(request)
+                self.assertEqual(result.intent, Intent.NOT_APPLICABLE)
+                self.assertFalse(is_deletion_authorized(request)[0])
+
+    def test_evaluation_dataset_has_exactly_ten_non_deletion_requests(self):
+        root = Path(__file__).resolve().parents[2]
+        expected_non_deletion = {f"case_{number}" for number in range(533, 543)}
+        with (root / "dataset" / "deletion_requests.csv").open(
+            encoding="utf-8-sig", newline=""
+        ) as handle:
+            classified = {
+                row["case_id"]
+                for row in csv.DictReader(handle)
+                if not is_deletion_authorized(row["request_text"])[0]
+            }
+        self.assertEqual(classified, expected_non_deletion)
+
+    def test_all_public_samples_are_authorized(self):
+        root = Path(__file__).resolve().parents[2]
+        with (root / "dataset" / "sample_deletion_requests.csv").open(
+            encoding="utf-8-sig", newline=""
+        ) as handle:
+            unauthorized = [
+                row["case_id"]
+                for row in csv.DictReader(handle)
+                if not is_deletion_authorized(row["request_text"])[0]
+            ]
+        self.assertEqual(unauthorized, [])
 
 
 if __name__ == "__main__":

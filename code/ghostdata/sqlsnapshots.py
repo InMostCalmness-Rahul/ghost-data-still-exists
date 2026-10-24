@@ -22,6 +22,7 @@ from pathlib import Path
 
 from .classify import classify_kind, extract_refs
 from .models import EvidenceFile, Observation
+from .json_records import _privacy_flags
 from .timeutil import parse_iso
 
 _TOPOLOGY_RE = re.compile(r"^--\s*Database topology:\s*(\S+)", re.MULTILINE)
@@ -118,10 +119,15 @@ def _row_to_observation(
         present = True
     ident_fields = ("full_name", "email", "phone", "email_hash", "display_name",
                     "requester_name", "requester_email", "requester_phone", "owner_email")
-    identifiable = any(
+    any_identifier = any(
         isinstance(row.get(f), str) and row.get(f).strip() and row.get(f).strip().lower() != "null"
         for f in ident_fields
-    ) or None
+    )
+    if kind in ("ANALYTICS_PROFILE", "SUPPORT_MESSAGE", "ACCOUNT_TOMBSTONE",
+                "EMAIL_DELIVERY_LOG", "PRODUCT_TELEMETRY"):
+        identifiable, redacted, anonymized = _privacy_flags(kind, any_identifier)
+    else:
+        identifiable, redacted, anonymized = None, None, None
     attributes = dict(row)
     attributes["sql_table"] = table
     if topology:
@@ -140,6 +146,8 @@ def _row_to_observation(
         enabled=enabled,
         restore_allowed=restore_allowed,
         identifiable=identifiable,
+        redacted=redacted,
+        anonymized=anonymized,
         retention_until=parse_iso(row.get("retention_until")),
         account_status=row.get("account_status"),
         attributes=attributes,
@@ -180,9 +188,11 @@ def _from_wrapped_record(
     if "restore_allowed" in record and record.get("restore_allowed") is not None:
         value = record.get("restore_allowed")
         restore_allowed = bool(value) if not isinstance(value, str) else value.strip().lower() in ("true", "1")
-    if collection in ("customer_analytics_reports", "deleted_customer_references",
-                      "support_conversations", "security_audit_events"):
-        identifiable = any_identifier or None
+    if kind in ("ANALYTICS_PROFILE", "SUPPORT_MESSAGE", "ACCOUNT_TOMBSTONE",
+                "EMAIL_DELIVERY_LOG", "PRODUCT_TELEMETRY"):
+        identifiable, redacted, anonymized = _privacy_flags(kind, any_identifier)
+    else:
+        redacted, anonymized = None, None
     attributes = dict(record)
     attributes["sql_table"] = table
     if collection:
@@ -203,6 +213,8 @@ def _from_wrapped_record(
         enabled=enabled,
         restore_allowed=restore_allowed,
         identifiable=identifiable,
+        redacted=redacted,
+        anonymized=anonymized,
         retention_until=parse_iso(record.get("retention_until")) or parse_iso(record.get("retained_until")),
         account_status=account_status,
         attributes=attributes,

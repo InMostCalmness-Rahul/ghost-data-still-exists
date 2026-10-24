@@ -32,6 +32,7 @@ class UserEvidenceIndex:
     # Co-location is retained only as a diagnostic lead; it does not bind
     # resources to users.
     inferred_resources: dict[str, set[str]] = field(default_factory=dict)  # user_id -> {resource_ids}
+    unresolved_activity_candidates: dict[str, set[str]] = field(default_factory=dict)
 
     def for_user(self, user_id: str) -> list[Observation]:
         return self.by_user.get(user_id, [])
@@ -45,12 +46,15 @@ class UserEvidenceIndex:
     def inferred_resources_for_user(self, user_id: str) -> set[str]:
         return self.inferred_resources.get(user_id, set())
 
+    def activity_candidates_for_user(self, user_id: str) -> set[str]:
+        """Return activity candidates only when an explicit identity link resolves."""
+        return self.activity_linked_resources.get(user_id, set())
+
     def all_resources_for_user(self, user_id: str) -> set[str]:
-        """All resource IDs associated with a user (direct + activity + inferred)."""
+        """Resource IDs proven associated with a user through evidence."""
         direct = {obs.resource_id for obs in self.for_user(user_id)}
-        activity = self.activity_resources_for_user(user_id)
         inferred = self.inferred_resources_for_user(user_id)
-        return direct | activity | inferred
+        return direct | inferred
 
 
 def _extract_user_from_link_claim(claim: ActivityEvent) -> str | None:
@@ -75,6 +79,35 @@ def _extract_email_from_link_claim(claim: ActivityEvent) -> str | None:
     if m:
         return m.group(1)
     return None
+
+
+def _activity_candidates(
+    activity: list[ActivityEvent],
+    identities: IdentityIndex,
+) -> tuple[dict[str, set[str]], dict[str, set[str]]]:
+    """Extract diagnostic candidates from explicit identity-link claims.
+
+    DELETE_RECORD rows are never sufficient. LINK_RESOURCE_IDENTITY claims are
+    still only candidates and must be corroborated by evidence before use.
+    """
+    candidates: dict[str, set[str]] = {}
+    unresolved: dict[str, set[str]] = {}
+    for claim in activity:
+        if claim.event_type != "LINK_RESOURCE_IDENTITY":
+            continue
+        users = set()
+        user_id = _extract_user_from_link_claim(claim)
+        if user_id:
+            users.update(identities.resolve_ref("user_id", user_id))
+        email = _extract_email_from_link_claim(claim)
+        if email:
+            users.update(identities.resolve_ref("email", email))
+        if users:
+            for uid in users:
+                candidates.setdefault(uid, set()).add(claim.resource_id)
+        else:
+            unresolved.setdefault(claim.resource_id, set()).add(claim.resource_id)
+    return candidates, unresolved
 
 
 def _infer_user_from_colocation(
@@ -147,5 +180,9 @@ def build_user_evidence_index(
 
     for bucket in index.by_user.values():
         bucket.sort(key=lambda o: (o.file_id, o.resource_id))
+
+    candidates, unresolved = _activity_candidates(ledger.activity, identities)
+    index.activity_linked_resources = candidates
+    index.unresolved_activity_candidates = unresolved
 
     return index

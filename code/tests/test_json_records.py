@@ -157,7 +157,8 @@ class TestJsonRecords(unittest.TestCase):
         dirty = by_rid["tombstone_9178"]
         self.assertEqual(clean.kind, "ACCOUNT_TOMBSTONE")
         self.assertIs(clean.present, True)
-        self.assertIsNone(clean.identifiable)
+        self.assertIs(clean.identifiable, False)
+        self.assertTrue(clean.redacted)
         self.assertTrue(dirty.identifiable)
         self.assertEqual({(r.kind, r.value) for r in dirty.refs},
                          {("user_id", "user_542"), ("name", "kofi addo"),
@@ -178,6 +179,13 @@ class TestJsonRecords(unittest.TestCase):
         self.assertEqual(obs.refs[0].value, "gabriel.costa@proton.me")
         self.assertEqual(obs.attributes.get("download_available"), True)
 
+    def test_expired_export_is_not_present(self):
+        document = EXPORT_JOBS.replace('"download_available": true', '"download_available": false')
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = _json_file(tmpdir, "expired.json", document)
+            ef = parse_records_document(path, "evidence_59", "evidence/records/expired.json")
+        self.assertIs(ef.records[0].present, False)
+
     def test_lookup_registration(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             path = _json_file(tmpdir, "lookup.json", LOOKUP_REGISTRATION)
@@ -192,7 +200,8 @@ class TestJsonRecords(unittest.TestCase):
             path = _json_file(tmpdir, "analytics.json", ANALYTICS)
             ef = parse_records_document(path, "evidence_56", "evidence/records/analytics.json")
         by_rid = {o.resource_id: o for o in ef.records}
-        self.assertIsNone(by_rid["analytics_901"].identifiable)
+        self.assertIs(by_rid["analytics_901"].identifiable, False)
+        self.assertTrue(by_rid["analytics_901"].anonymized)
         self.assertTrue(by_rid["analytics_824"].identifiable)
 
 

@@ -101,6 +101,30 @@ class TestMatcher(unittest.TestCase):
         )
         self.assertEqual(index.inferred_resources_for_user("user_01"), set())
 
+    def test_explicit_activity_identity_link_is_candidate_only(self):
+        from ghostdata.classify import make_ref
+
+        obs = _obs("evidence_06", "account_11", [make(("email", "one@x.com"))])
+        linked = ActivityEvent(
+            "activity_02",
+            obs.captured_at,
+            "LINK_RESOURCE_IDENTITY",
+            "catalog",
+            "account_service",
+            "search_11",
+            "SUCCESS",
+            "Data catalog linked search_11 to one@x.com and user_01.",
+        )
+        ledger = EvidenceLedger()
+        ledger.files = [EvidenceFile("evidence_06", "p", "o", obs.captured_at, "log", [obs])]
+        ledger.activity = [linked]
+        index = build_user_evidence_index(ledger, self._identities())
+        self.assertEqual(index.activity_candidates_for_user("user_01"), {"search_11"})
+        self.assertEqual(
+            {item.resource_id for item in index.for_user("user_01")},
+            {"account_11"},
+        )
+
 
 def make(pair):
     from ghostdata.classify import make_ref

@@ -106,11 +106,13 @@ def _state_from_observation(obs: Observation) -> ResourceState:
                 return ResourceState.PRESENT_REDACTED
             if obs.anonymized:
                 return ResourceState.PRESENT_ANONYMIZED
-            if obs.identifiable is False:
+            if obs.identifiable is False and obs.kind in ("ANALYTICS_PROFILE", "PRODUCT_TELEMETRY"):
                 return ResourceState.PRESENT_ANONYMIZED
-            if obs.identifiable is True or (obs.kind in ("ANALYTICS_PROFILE", "SUPPORT_MESSAGE") and obs.identifiable is not False):
+            if obs.identifiable is True:
                 return ResourceState.PRESENT_IDENTIFIABLE
-            return ResourceState.PRESENT_IDENTIFIABLE
+            if obs.kind == "USER_EXPORT":
+                return ResourceState.PRESENT_IDENTIFIABLE
+            return ResourceState.UNKNOWN
 
     if obs.kind == "ANALYTICS_PROFILE":
         if obs.present is False:
@@ -121,7 +123,9 @@ def _state_from_observation(obs: Observation) -> ResourceState:
             return ResourceState.PRESENT_REDACTED
         if obs.identifiable is False:
             return ResourceState.PRESENT_ANONYMIZED
-        return ResourceState.PRESENT_IDENTIFIABLE
+        if obs.identifiable is True:
+            return ResourceState.PRESENT_IDENTIFIABLE
+        return ResourceState.UNKNOWN
 
     if obs.kind == "DATA_FLOW":
         if obs.enabled is False:
