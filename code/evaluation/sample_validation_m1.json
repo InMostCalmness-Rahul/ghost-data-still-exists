@@ -1,0 +1,1079 @@
+{
+  "cases": [
+    {
+      "case_id": "case_01",
+      "email": "amina.elmasri@gmail.com",
+      "audit_at": "2026-09-03T11:30:00+00:00",
+      "resolved_users": [
+        "user_01"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [],
+      "sample_output_cited": [
+        "evidence_54"
+      ],
+      "cited_covered": [],
+      "cited_missing": [
+        "evidence_54"
+      ],
+      "extra_files": [],
+      "expected_resources": [
+        "account_001"
+      ],
+      "resources_recovered": [],
+      "resources_missing": [
+        "account_001"
+      ],
+      "resource_count": 0
+    },
+    {
+      "case_id": "case_02",
+      "email": "mateo.rios@outlook.com",
+      "audit_at": "2026-09-04T15:00:00+00:00",
+      "resolved_users": [
+        "user_02"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [],
+      "sample_output_cited": [
+        "evidence_54"
+      ],
+      "cited_covered": [],
+      "cited_missing": [
+        "evidence_54"
+      ],
+      "extra_files": [],
+      "expected_resources": [
+        "account_002"
+      ],
+      "resources_recovered": [],
+      "resources_missing": [
+        "account_002"
+      ],
+      "resource_count": 0
+    },
+    {
+      "case_id": "case_03",
+      "email": "l.fontaine46@yahoo.com",
+      "audit_at": "2026-09-26T11:00:00+00:00",
+      "resolved_users": [
+        "user_43"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_94"
+      ],
+      "sample_output_cited": [
+        "evidence_94"
+      ],
+      "cited_covered": [
+        "evidence_94"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_7566",
+        "analytics_9406",
+        "audit_record_2016"
+      ],
+      "resources_recovered": [
+        "account_7566",
+        "audit_record_2016"
+      ],
+      "resources_missing": [
+        "analytics_9406"
+      ],
+      "resource_count": 2
+    },
+    {
+      "case_id": "case_04",
+      "email": "thandiwe.n@gmail.com",
+      "audit_at": "2026-09-07T10:20:00+00:00",
+      "resolved_users": [
+        "user_04"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [],
+      "sample_output_cited": [
+        "evidence_54",
+        "evidence_56"
+      ],
+      "cited_covered": [],
+      "cited_missing": [
+        "evidence_54",
+        "evidence_56"
+      ],
+      "extra_files": [],
+      "expected_resources": [
+        "account_004",
+        "analytics_901"
+      ],
+      "resources_recovered": [],
+      "resources_missing": [
+        "account_004",
+        "analytics_901"
+      ],
+      "resource_count": 0
+    },
+    {
+      "case_id": "case_05",
+      "email": "leila.haddad@yahoo.com",
+      "audit_at": "2026-09-08T13:40:00+00:00",
+      "resolved_users": [
+        "user_05"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_54"
+      ],
+      "sample_output_cited": [
+        "evidence_54"
+      ],
+      "cited_covered": [
+        "evidence_54"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_005"
+      ],
+      "resources_recovered": [
+        "account_005"
+      ],
+      "resources_missing": [],
+      "resource_count": 1
+    },
+    {
+      "case_id": "case_06",
+      "email": "jonas.berg@outlook.com",
+      "audit_at": "2026-09-10T09:15:00+00:00",
+      "resolved_users": [
+        "user_06"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_57"
+      ],
+      "sample_output_cited": [
+        "evidence_57"
+      ],
+      "cited_covered": [
+        "evidence_57"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_006",
+        "search_001"
+      ],
+      "resources_recovered": [
+        "search_001"
+      ],
+      "resources_missing": [
+        "account_006"
+      ],
+      "resource_count": 1
+    },
+    {
+      "case_id": "case_07",
+      "email": "priya.raman@gmail.com",
+      "audit_at": "2026-09-12T08:00:00+00:00",
+      "resolved_users": [
+        "user_07"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [],
+      "sample_output_cited": [
+        "evidence_58"
+      ],
+      "cited_covered": [],
+      "cited_missing": [
+        "evidence_58"
+      ],
+      "extra_files": [],
+      "expected_resources": [
+        "account_007",
+        "support_001"
+      ],
+      "resources_recovered": [],
+      "resources_missing": [
+        "account_007",
+        "support_001"
+      ],
+      "resource_count": 0
+    },
+    {
+      "case_id": "case_08",
+      "email": "gabriel.costa@proton.me",
+      "audit_at": "2026-09-14T16:10:00+00:00",
+      "resolved_users": [
+        "user_08"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_59"
+      ],
+      "sample_output_cited": [
+        "evidence_59"
+      ],
+      "cited_covered": [
+        "evidence_59"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_008",
+        "export_001"
+      ],
+      "resources_recovered": [
+        "export_001"
+      ],
+      "resources_missing": [
+        "account_008"
+      ],
+      "resource_count": 1
+    },
+    {
+      "case_id": "case_09",
+      "email": "k.appiah88@gmail.com",
+      "audit_at": "2026-09-16T09:00:00+00:00",
+      "resolved_users": [
+        "user_61"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_06",
+        "evidence_93"
+      ],
+      "sample_output_cited": [
+        "evidence_93"
+      ],
+      "cited_covered": [
+        "evidence_93"
+      ],
+      "cited_missing": [],
+      "extra_files": [
+        "evidence_06"
+      ],
+      "expected_resources": [
+        "account_3960",
+        "audit_record_4902",
+        "backup_4978"
+      ],
+      "resources_recovered": [
+        "account_3960",
+        "audit_record_4902",
+        "backup_4978"
+      ],
+      "resources_missing": [],
+      "resource_count": 4
+    },
+    {
+      "case_id": "case_10",
+      "email": "nadia.ionescu@yahoo.com",
+      "audit_at": "2026-09-18T12:25:00+00:00",
+      "resolved_users": [
+        "user_10"
+      ],
+      "route": "historical_email",
+      "evidence_files_for_user": [
+        "evidence_61"
+      ],
+      "sample_output_cited": [
+        "evidence_61"
+      ],
+      "cited_covered": [
+        "evidence_61"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_010",
+        "support_002"
+      ],
+      "resources_recovered": [
+        "support_002"
+      ],
+      "resources_missing": [
+        "account_010"
+      ],
+      "resource_count": 1
+    },
+    {
+      "case_id": "case_11",
+      "email": "novak.tomasz@icloud.com",
+      "audit_at": "2026-10-01T12:00:00+00:00",
+      "resolved_users": [
+        "user_32"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_03"
+      ],
+      "sample_output_cited": [
+        "evidence_03"
+      ],
+      "cited_covered": [
+        "evidence_03"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_4248",
+        "analytics_2034",
+        "audit_record_9394",
+        "data_flow_9522",
+        "search_052",
+        "support_864"
+      ],
+      "resources_recovered": [
+        "account_4248",
+        "analytics_2034",
+        "audit_record_9394",
+        "data_flow_9522",
+        "search_052",
+        "support_864"
+      ],
+      "resources_missing": [],
+      "resource_count": 6
+    },
+    {
+      "case_id": "case_12",
+      "email": "minjun.kim@gmail.com",
+      "audit_at": "2026-09-15T12:00:00+00:00",
+      "resolved_users": [
+        "user_12"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_01"
+      ],
+      "sample_output_cited": [
+        "evidence_01"
+      ],
+      "cited_covered": [
+        "evidence_01"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_9797",
+        "analytics_9914",
+        "audit_record_2945"
+      ],
+      "resources_recovered": [
+        "account_9797",
+        "audit_record_2945"
+      ],
+      "resources_missing": [
+        "analytics_9914"
+      ],
+      "resource_count": 2
+    },
+    {
+      "case_id": "case_13",
+      "email": "noor-khalil@proton.me",
+      "audit_at": "2026-10-01T12:00:00+00:00",
+      "resolved_users": [
+        "user_33"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_03"
+      ],
+      "sample_output_cited": [
+        "evidence_03"
+      ],
+      "cited_covered": [
+        "evidence_03"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_9335",
+        "audit_record_4816",
+        "search_1308",
+        "support_4218"
+      ],
+      "resources_recovered": [
+        "account_9335",
+        "audit_record_4816",
+        "search_1308",
+        "support_4218"
+      ],
+      "resources_missing": [],
+      "resource_count": 4
+    },
+    {
+      "case_id": "case_14",
+      "email": "y.tanaka32@gmail.com",
+      "audit_at": "2026-10-01T12:00:00+00:00",
+      "resolved_users": [
+        "user_37"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_03"
+      ],
+      "sample_output_cited": [
+        "evidence_03"
+      ],
+      "cited_covered": [
+        "evidence_03"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_3677",
+        "audit_record_987",
+        "backup_3870"
+      ],
+      "resources_recovered": [
+        "account_3677",
+        "audit_record_987",
+        "backup_3870"
+      ],
+      "resources_missing": [],
+      "resource_count": 3
+    },
+    {
+      "case_id": "case_15",
+      "email": "lucia-torres@gmail.com",
+      "audit_at": "2026-09-15T12:00:00+00:00",
+      "resolved_users": [
+        "user_15"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_01"
+      ],
+      "sample_output_cited": [
+        "evidence_01"
+      ],
+      "cited_covered": [
+        "evidence_01"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_4745",
+        "audit_record_1596",
+        "data_flow_9846"
+      ],
+      "resources_recovered": [
+        "account_4745",
+        "audit_record_1596",
+        "data_flow_9846"
+      ],
+      "resources_missing": [],
+      "resource_count": 3
+    },
+    {
+      "case_id": "case_16",
+      "email": "diya.k4436@outlook.com",
+      "audit_at": "2026-09-21T10:00:00+00:00",
+      "resolved_users": [
+        "user_53"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_05"
+      ],
+      "sample_output_cited": [
+        "evidence_05"
+      ],
+      "cited_covered": [
+        "evidence_05"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_994",
+        "audit_record_9528",
+        "search_1007"
+      ],
+      "resources_recovered": [
+        "account_994",
+        "audit_record_9528"
+      ],
+      "resources_missing": [
+        "search_1007"
+      ],
+      "resource_count": 3
+    },
+    {
+      "case_id": "case_17",
+      "email": "leonie.g9352@outlook.com",
+      "audit_at": "2026-09-15T12:00:00+00:00",
+      "resolved_users": [
+        "user_17"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_01",
+        "evidence_67"
+      ],
+      "sample_output_cited": [
+        "evidence_01"
+      ],
+      "cited_covered": [
+        "evidence_01"
+      ],
+      "cited_missing": [],
+      "extra_files": [
+        "evidence_67"
+      ],
+      "expected_resources": [
+        "account_4092",
+        "audit_record_1797",
+        "backup_3245"
+      ],
+      "resources_recovered": [
+        "account_4092",
+        "audit_record_1797",
+        "backup_3245"
+      ],
+      "resources_missing": [],
+      "resource_count": 4
+    },
+    {
+      "case_id": "case_18",
+      "email": "mori.ren@gmail.com",
+      "audit_at": "2026-09-26T11:00:00+00:00",
+      "resolved_users": [
+        "user_50"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_94"
+      ],
+      "sample_output_cited": [
+        "evidence_94"
+      ],
+      "cited_covered": [
+        "evidence_94"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_5521",
+        "analytics_037",
+        "audit_record_6645",
+        "data_flow_4890",
+        "search_4013",
+        "support_5569"
+      ],
+      "resources_recovered": [
+        "analytics_037",
+        "data_flow_4890",
+        "search_4013",
+        "support_5569"
+      ],
+      "resources_missing": [
+        "account_5521",
+        "audit_record_6645"
+      ],
+      "resource_count": 4
+    },
+    {
+      "case_id": "case_19",
+      "email": "e.varga90@yahoo.com",
+      "audit_at": "2026-09-15T12:00:00+00:00",
+      "resolved_users": [
+        "user_19"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_01"
+      ],
+      "sample_output_cited": [
+        "evidence_01"
+      ],
+      "cited_covered": [
+        "evidence_01"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_9102",
+        "audit_record_6793",
+        "search_6083",
+        "support_9553"
+      ],
+      "resources_recovered": [
+        "account_9102",
+        "audit_record_6793",
+        "search_6083",
+        "support_9553"
+      ],
+      "resources_missing": [],
+      "resource_count": 4
+    },
+    {
+      "case_id": "case_20",
+      "email": "akosua.gyasi@gmail.com",
+      "audit_at": "2026-09-26T11:00:00+00:00",
+      "resolved_users": [
+        "user_48"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_94"
+      ],
+      "sample_output_cited": [
+        "evidence_94"
+      ],
+      "cited_covered": [
+        "evidence_94"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_5037",
+        "audit_record_5569",
+        "data_flow_1770",
+        "search_4262"
+      ],
+      "resources_recovered": [
+        "data_flow_1770",
+        "search_4262"
+      ],
+      "resources_missing": [
+        "account_5037",
+        "audit_record_5569"
+      ],
+      "resource_count": 2
+    },
+    {
+      "case_id": "case_21",
+      "email": "amara-okeke@proton.me",
+      "audit_at": "2026-09-15T12:00:00+00:00",
+      "resolved_users": [
+        "user_21"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_92"
+      ],
+      "sample_output_cited": [
+        "evidence_92"
+      ],
+      "cited_covered": [
+        "evidence_92"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_6440",
+        "analytics_5335",
+        "audit_record_3737"
+      ],
+      "resources_recovered": [
+        "audit_record_3737"
+      ],
+      "resources_missing": [
+        "account_6440",
+        "analytics_5335"
+      ],
+      "resource_count": 1
+    },
+    {
+      "case_id": "case_22",
+      "email": "seoyeon-han@gmail.com",
+      "audit_at": "2026-09-21T10:00:00+00:00",
+      "resolved_users": [
+        "user_51"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_05"
+      ],
+      "sample_output_cited": [
+        "evidence_05"
+      ],
+      "cited_covered": [
+        "evidence_05"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_4990",
+        "analytics_4440",
+        "audit_record_3482",
+        "search_8911"
+      ],
+      "resources_recovered": [
+        "analytics_4440",
+        "audit_record_3482"
+      ],
+      "resources_missing": [
+        "account_4990",
+        "search_8911"
+      ],
+      "resource_count": 4
+    },
+    {
+      "case_id": "case_23",
+      "email": "thandiwe.m6866@zoho.com",
+      "audit_at": "2026-09-15T12:00:00+00:00",
+      "resolved_users": [
+        "user_23"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_92"
+      ],
+      "sample_output_cited": [
+        "evidence_92"
+      ],
+      "cited_covered": [
+        "evidence_92"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_410",
+        "audit_record_4128",
+        "export_7364",
+        "search_898"
+      ],
+      "resources_recovered": [
+        "export_7364",
+        "search_898"
+      ],
+      "resources_missing": [
+        "account_410",
+        "audit_record_4128"
+      ],
+      "resource_count": 2
+    },
+    {
+      "case_id": "case_24",
+      "email": "keiko.nakamura@gmail.com",
+      "audit_at": "2026-09-15T12:00:00+00:00",
+      "resolved_users": [
+        "user_24"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_92"
+      ],
+      "sample_output_cited": [
+        "evidence_92"
+      ],
+      "cited_covered": [
+        "evidence_92"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_5334",
+        "audit_record_7095",
+        "search_5577"
+      ],
+      "resources_recovered": [
+        "account_5334",
+        "search_5577"
+      ],
+      "resources_missing": [
+        "audit_record_7095"
+      ],
+      "resource_count": 2
+    },
+    {
+      "case_id": "case_25",
+      "email": "s.yoon04@gmail.com",
+      "audit_at": "2026-09-15T12:00:00+00:00",
+      "resolved_users": [
+        "user_25"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_92"
+      ],
+      "sample_output_cited": [
+        "evidence_92"
+      ],
+      "cited_covered": [
+        "evidence_92"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_3136",
+        "analytics_1895",
+        "audit_record_451"
+      ],
+      "resources_recovered": [
+        "audit_record_451"
+      ],
+      "resources_missing": [
+        "account_3136",
+        "analytics_1895"
+      ],
+      "resource_count": 1
+    },
+    {
+      "case_id": "case_26",
+      "email": "almeida.mariana@gmail.com",
+      "audit_at": "2026-09-15T12:00:00+00:00",
+      "resolved_users": [
+        "user_26"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_92"
+      ],
+      "sample_output_cited": [
+        "evidence_92"
+      ],
+      "cited_covered": [
+        "evidence_92"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_5684",
+        "analytics_4566",
+        "audit_record_5416",
+        "backup_3120",
+        "data_flow_6244",
+        "support_4715"
+      ],
+      "resources_recovered": [
+        "audit_record_5416",
+        "backup_3120",
+        "data_flow_6244",
+        "support_4715"
+      ],
+      "resources_missing": [
+        "account_5684",
+        "analytics_4566"
+      ],
+      "resource_count": 4
+    },
+    {
+      "case_id": "case_27",
+      "email": "ananya-nair@gmail.com",
+      "audit_at": "2026-09-15T12:00:00+00:00",
+      "resolved_users": [
+        "user_27"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_92"
+      ],
+      "sample_output_cited": [
+        "evidence_92"
+      ],
+      "cited_covered": [
+        "evidence_92"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_3866",
+        "analytics_4574",
+        "audit_record_3830",
+        "backup_5970",
+        "data_flow_2295",
+        "support_4707"
+      ],
+      "resources_recovered": [
+        "audit_record_3830",
+        "backup_5970",
+        "data_flow_2295",
+        "support_4707"
+      ],
+      "resources_missing": [
+        "account_3866",
+        "analytics_4574"
+      ],
+      "resource_count": 4
+    },
+    {
+      "case_id": "case_28",
+      "email": "smartinez6461@gmail.com",
+      "audit_at": "2026-09-15T12:00:00+00:00",
+      "resolved_users": [
+        "user_28"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_92"
+      ],
+      "sample_output_cited": [
+        "evidence_92"
+      ],
+      "cited_covered": [
+        "evidence_92"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_5482",
+        "analytics_6077",
+        "audit_record_9265",
+        "backup_838",
+        "data_flow_2337",
+        "support_2351"
+      ],
+      "resources_recovered": [
+        "audit_record_9265",
+        "backup_838",
+        "data_flow_2337",
+        "support_2351"
+      ],
+      "resources_missing": [
+        "account_5482",
+        "analytics_6077"
+      ],
+      "resource_count": 4
+    },
+    {
+      "case_id": "case_29",
+      "email": "noah.f438085@outlook.com",
+      "audit_at": "2026-09-15T12:00:00+00:00",
+      "resolved_users": [
+        "user_29"
+      ],
+      "route": "historical_email",
+      "evidence_files_for_user": [
+        "evidence_92"
+      ],
+      "sample_output_cited": [
+        "evidence_92"
+      ],
+      "cited_covered": [
+        "evidence_92"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_7012",
+        "analytics_5208",
+        "audit_record_3954",
+        "data_flow_3827",
+        "search_1993",
+        "support_5281"
+      ],
+      "resources_recovered": [
+        "analytics_5208",
+        "data_flow_3827",
+        "search_1993",
+        "support_5281"
+      ],
+      "resources_missing": [
+        "account_7012",
+        "audit_record_3954"
+      ],
+      "resource_count": 4
+    },
+    {
+      "case_id": "case_30",
+      "email": "camille.bernard86@outlook.com",
+      "audit_at": "2026-09-15T12:00:00+00:00",
+      "resolved_users": [
+        "user_30"
+      ],
+      "route": "historical_email",
+      "evidence_files_for_user": [
+        "evidence_92"
+      ],
+      "sample_output_cited": [
+        "evidence_92"
+      ],
+      "cited_covered": [
+        "evidence_92"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_4163",
+        "analytics_3697",
+        "audit_record_1707",
+        "data_flow_8524",
+        "search_9359",
+        "support_6477"
+      ],
+      "resources_recovered": [
+        "analytics_3697",
+        "data_flow_8524",
+        "search_9359",
+        "support_6477"
+      ],
+      "resources_missing": [
+        "account_4163",
+        "audit_record_1707"
+      ],
+      "resource_count": 4
+    },
+    {
+      "case_id": "case_31",
+      "email": "a.eze08@gmail.com",
+      "audit_at": "2026-09-15T12:00:00+00:00",
+      "resolved_users": [
+        "user_541"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_51"
+      ],
+      "sample_output_cited": [
+        "evidence_51"
+      ],
+      "cited_covered": [
+        "evidence_51"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_4857",
+        "audit_record_6909",
+        "tombstone_440"
+      ],
+      "resources_recovered": [
+        "audit_record_6909",
+        "tombstone_440"
+      ],
+      "resources_missing": [
+        "account_4857"
+      ],
+      "resource_count": 2
+    },
+    {
+      "case_id": "case_32",
+      "email": "addo.kofi@gmail.com",
+      "audit_at": "2026-09-15T12:00:00+00:00",
+      "resolved_users": [
+        "user_542"
+      ],
+      "route": "current_email",
+      "evidence_files_for_user": [
+        "evidence_51"
+      ],
+      "sample_output_cited": [
+        "evidence_51"
+      ],
+      "cited_covered": [
+        "evidence_51"
+      ],
+      "cited_missing": [],
+      "extra_files": [],
+      "expected_resources": [
+        "account_8858",
+        "audit_record_7068",
+        "tombstone_9178"
+      ],
+      "resources_recovered": [
+        "audit_record_7068",
+        "tombstone_9178"
+      ],
+      "resources_missing": [
+        "account_8858"
+      ],
+      "resource_count": 2
+    }
+  ],
+  "identity_ambiguities": []
+}
