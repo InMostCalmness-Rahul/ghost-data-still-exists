@@ -70,6 +70,7 @@ def evaluate_case(
     ledger: EvidenceLedger,
     user_index: UserEvidenceIndex,
     identity_index: Any,
+    runtime_agent: Any | None = None,
 ) -> CaseResult:
     """Evaluate a single deletion request case."""
     audit_at = case.audit_at
@@ -110,6 +111,62 @@ def evaluate_case(
         if obs.captured_at and obs.captured_at <= audit_at
         and (obs.observed_at is None or obs.observed_at <= audit_at)
     ]
+
+    # Runtime assistance may inspect deterministic summaries through bounded
+    # tools, but it cannot alter the evidence conclusion or output steps.
+    if runtime_agent is not None:
+        def execute_investigation(
+            action: str,
+            args: dict[str, Any],
+            _context: dict[str, Any],
+        ) -> dict[str, Any]:
+            del args
+            if action == "search_evidence":
+                return {
+                    "executed": True,
+                    "observation_count": len(usable_obs),
+                    "resource_ids": sorted({obs.resource_id for obs in usable_obs}),
+                }
+            if action == "resolve_identity":
+                return {"executed": True, "resolved_user_ids": [user_id]}
+            if action == "find_corroboration":
+                return {
+                    "executed": True,
+                    "owner_linked_resources": sorted({obs.resource_id for obs in usable_obs}),
+                    "activity_candidates": sorted(user_index.activity_candidates_for_user(user_id)),
+                }
+            if action == "check_recreate_path":
+                resource_ids = {obs.resource_id for obs in usable_obs}
+                events = [
+                    event for event in ledger.activity
+                    if event.resource_id in resource_ids
+                    and (event.event_time is None or event.event_time <= audit_at)
+                ]
+                return {
+                    "executed": True,
+                    "event_count": len(events),
+                    "event_types": sorted({event.event_type for event in events}),
+                }
+            if action == "extract_multimodal":
+                return {
+                    "executed": True,
+                    "multimodal_files": sorted({
+                        obs.file_id for obs in usable_obs
+                        if obs.source_kind in ("pdf", "png")
+                    }),
+                }
+            raise ValueError(f"unsupported investigation action: {action}")
+
+        runtime_agent.investigate(
+            case,
+            {
+                "request_text": case.request_text,
+                "resolved_user": True,
+                "known_observation_count": len(usable_obs),
+                "known_resource_count": len({obs.resource_id for obs in usable_obs}),
+            },
+            tool_executor=execute_investigation,
+        )
 
     # 4. Build state snapshot
     snapshot = build_user_state(user_id, audit_at, usable_obs, ledger.activity)
@@ -182,11 +239,8 @@ def run_evaluation(
         result = evaluate_case(case, ledger, user_index, identity_index)
         results.append(result)
 
-    # Write output.csv
-    with open(output_file, "w", encoding="utf-8", newline="") as f:
-        f.write("case_id,deletion_status,steps_json\n")
-        for r in results:
-            steps_json = _steps_to_json(r.steps)
-            f.write(f'"{r.case_id}","{r.deletion_status}","{steps_json}"\n')
+    from evaluation.validator import write_results
+
+    write_results(output_file, results, expected_case_ids=[case.case_id for case in requests])
 
     return results

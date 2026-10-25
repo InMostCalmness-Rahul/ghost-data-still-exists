@@ -68,10 +68,15 @@ class Step:
     rationale: str = ""
 
 
-def _policy_action(kind: str) -> str:
+def _policy_action(kind: str, attributes: dict[str, Any] | None = None) -> str:
     """Read the required action from the participant-supplied policy."""
     if kind == "DATA_FLOW":
         return "DISABLE"
+    if kind == "SUPPORT_MESSAGE" and attributes:
+        record_type = str(attributes.get("record_type", "")).upper()
+        marker_found = str(attributes.get("marker_found", "")).lower()
+        if record_type == "SUPPORT_ATTACHMENT" or marker_found == "false":
+            return "DELETE"
     for rule in load_rules():
         if rule.data_category == kind:
             return rule.required_action
@@ -100,7 +105,7 @@ def _plan_for_resource(
 ) -> tuple[list[Step], int]:
     """Generate steps for a single resource based on its state and policy."""
     steps = []
-    action = _policy_action(kind)
+    action = _policy_action(kind, state_record.attributes)
 
     # If already compliant (absent/anonymized/redacted as required), only verify
     if action == "DELETE":
@@ -415,7 +420,7 @@ def plan_remediation(
     resources_needing_action: list[tuple[str, str, ResourceStateRecord]] = []
 
     for resource_id, state_record in snapshot.resources.items():
-        action = _policy_action(state_record.kind)
+        action = _policy_action(state_record.kind, state_record.attributes)
         needs_backup_control = (
             state_record.kind == "BACKUP_ARCHIVE"
             and state_record.state in (ResourceState.PRESENT_RESTORABLE, ResourceState.BLOCKED)
@@ -439,7 +444,7 @@ def plan_remediation(
 
     # Phase 1: Disable data flows and block restores FIRST
     for resource_id, system_id, state_record in resources_needing_action:
-        action = _policy_action(state_record.kind)
+        action = _policy_action(state_record.kind, state_record.attributes)
         if action == "DISABLE":  # DATA_FLOW
             steps, step_counter = _plan_for_resource(
                 resource_id, system_id, state_record.kind, state_record,
@@ -457,7 +462,7 @@ def plan_remediation(
 
     # Phase 2: Process record-level remediation in dependency order
     for resource_id, system_id, state_record in resources_needing_action:
-        action = _policy_action(state_record.kind)
+        action = _policy_action(state_record.kind, state_record.attributes)
         if action in ("DELETE", "ANONYMIZE", "REDACT") and state_record.kind != "BACKUP_ARCHIVE":
             steps, step_counter = _plan_for_resource(
                 resource_id, system_id, state_record.kind, state_record,
@@ -467,7 +472,7 @@ def plan_remediation(
 
     # Phase 3: Verification for retained records (security audit logs, legal holds)
     for resource_id, state_record in snapshot.resources.items():
-        action = _policy_action(state_record.kind)
+        action = _policy_action(state_record.kind, state_record.attributes)
         if action == "RETAIN" and state_record.kind in ("SECURITY_AUDIT_LOG", "LEGAL_HOLD_RECORD"):
             if state_record.state == ResourceState.PRESENT_IDENTIFIABLE:
                 step_counter += 1
@@ -484,7 +489,7 @@ def plan_remediation(
 
     # Phase 4: Verification for already-compliant resources
     for resource_id, state_record in snapshot.resources.items():
-        action = _policy_action(state_record.kind)
+        action = _policy_action(state_record.kind, state_record.attributes)
         # Skip if already handled above
         if action == "DELETE" and state_record.state in (ResourceState.ABSENT_VERIFIED, ResourceState.ABSENT_CLAIMED):
             if not any(s.resource_id == resource_id and s.operation == Operation.VERIFY_RECORD_ABSENT for s in all_steps):
@@ -554,6 +559,15 @@ def plan_remediation(
                     evidence_id=state_record.evidence_ids[0] if state_record.evidence_ids else "",
                     rationale="Restore access is already blocked",
                 ))
+
+    # Emit all findings before remediation and all remediation before
+    # verification. Stable sorting preserves dependency order within a phase.
+    phase_order = {
+        Phase.FINDING: 0,
+        Phase.REMEDIATION: 1,
+        Phase.VERIFICATION: 2,
+    }
+    all_steps.sort(key=lambda step: phase_order[step.phase])
 
     # Renumber steps to be consecutive
     for i, step in enumerate(all_steps):

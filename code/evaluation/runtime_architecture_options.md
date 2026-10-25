@@ -1,9 +1,27 @@
 # Runtime Architecture Options Report
 
 **Date**: 2026-10-25  
-**Status**: DRAFT FOR REVIEW — design only; no production code changed  
+**Status**: UPDATED — hybrid runtime and output validation implemented; keyed access blocked
 **Prepared by**: Section 1 drafted by *Nemotron 3 Ultra Free*; Sections 2–10 drafted by *DeepSeek V4.1 Flash* (OpenCode harness, model `opencode/deepseek-v4.1-flash-free`)  
 **Repository**: C:\Users\rahul\OneDrive\Desktop\CTS\hackerrank-orchestrate-october26
+
+> **Implementation update 2026-10-25.** The previously proposed local OCR path is
+> now implemented. Tesseract OCR 5.5.3 is installed on the development machine;
+> `pytesseract`, Pillow, PyMuPDF, and pypdf are declared in
+> `code/requirements.txt`. PNGs are OCR-processed and PDFs use Tesseract as a
+> fallback when pypdf extracts no supported identifiers. OCR text is diagnostic
+> provenance, not standalone proof: ownership, audit-time eligibility, and
+> completion still use the deterministic evidence rules. If Tesseract or a
+> requested language pack is unavailable, the parser records an explicit
+> unreadable result.
+
+> **Hybrid runtime update 2026-10-25.** The bounded runtime loop now executes
+> deterministic investigation tools and returns their sanitized results to the
+> model. Model output remains advisory and cannot determine audit conclusions.
+> Dependencies are installed and locked with `uv`. A keyed-safe smoke attempt
+> reached all configured providers but returned Gemini HTTP 404 and
+> OpenRouter/Groq HTTP 403; no token usage was recorded. Provider response
+> bodies and credentials were not logged.
 
 > **Provenance note.** This document was started by Nemotron 3 Ultra Free, which completed the initial
 > LLM-provider comparison and then failed repeatedly while appending further sections. The failure mode
@@ -25,16 +43,16 @@ This report investigates the runtime architecture options for the "Ghost Data St
 
 ### Executive recommendation
 
-**Build a deterministic audit engine with bounded, optional LLM assistance, behind a provider-independent adapter.** Primary runtime model: Gemini `gemini-3.8-flash` (free tier verified free of charge). Fallback: OpenRouter free models that declare tool support. If no credential or network is available, the run still produces a complete, schema-valid `output.csv` in deterministic-only mode. Local inference is not adopted (4 GiB VRAM measured — it fits a 3–4B model, not a capable one).
+**Build a deterministic audit engine with bounded, optional LLM assistance, behind a provider-independent adapter.** The implemented runtime order is Gemini primary, OpenRouter fallback, then Groq. A separate usage verifier uses Groq primary, then OpenRouter, then Gemini. If no credential or network is available, the run still preserves deterministic processing. Local inference is not adopted (4 GiB VRAM measured — it fits a 3–4B model, not a capable one).
 
 ### Key findings
 
 | Area | Status | Summary |
 |------|--------|---------|
-| **LLM Providers** | **PASS (comparison)** | Gemini primary, OpenRouter fallback, Grok optional/not investigated. SDKs install; official pricing verified; live inference **UNVERIFIED** (no key present). |
+| **LLM Providers** | **PASS (adapters integrated)** | Gemini primary, OpenRouter fallback, and Groq fallback are implemented with environment-only credentials. Live inference remains unverified until a keyed smoke test. |
 | **Local Models** | **BLOCKED as primary** | Measured: GTX 1650 **4096 MiB** VRAM, **7.87 GiB** RAM. 1–4B fits but is inadequate for 15-field cited output; 7–8B does not fit. Ollama absent. |
 | **Agent Architecture** | **PASS** | Deterministic engine + bounded LLM assist (closed action menu). Multi-agent rejected. |
-| **Evidence Tools** | **PARTIAL** | PDF: `pypdf` extracts all 4 PDFs (verified). Local OCR: **BLOCKED** (no Tesseract). Vision API: viable, **UNVERIFIED** (no key). SQLite/FastAPI: omitted by decision. |
+| **Evidence Tools** | **PASS with fallback** | PDF: `pypdf` extracts all 4 PDFs, with Tesseract/PyMuPDF fallback. Local Tesseract OCR processes PNGs. Vision API remains optional and **UNVERIFIED** (no key). SQLite/FastAPI: omitted by decision. |
 | **Execution Constraints** | **UNVERIFIED** | No repository rule guarantees network or credentials at evaluation → keyless run treated as mandatory. |
 | **Project Structure** | **PASS (proposal)** | Additive structure mapped onto the current tree; `code/main.py` entry point preserved; nothing moved. |
 
@@ -43,11 +61,11 @@ This report investigates the runtime architecture options for the "Ghost Data St
 | Gate | Status |
 |------|--------|
 | A. Provider comparison | **PASS** |
-| A1/A2. Gemini / OpenRouter live inference | **UNVERIFIED** (no credentials) |
+| A1/A2/A3. Gemini / OpenRouter / Groq live inference | **UNVERIFIED** (no credentials supplied) |
 | B. Provider-independent configuration | **PASS** |
 | C. Local-model feasibility | **PASS (investigation) / BLOCKED (primary)** |
 | D. Architecture decision | **PASS** |
-| E. Evidence processing | **PDF PASS · local OCR BLOCKED · vision UNVERIFIED** |
+| E. Evidence processing | **PDF PASS · local OCR PASS with safeguards · vision UNVERIFIED** |
 | F. Execution constraints | **UNVERIFIED** |
 | G. Project structure | **PASS (proposal)** |
 | H. Security & reliability | **PASS (design)** |
@@ -61,7 +79,9 @@ This report investigates the runtime architecture options for the "Ghost Data St
 
 **Verified Facts (re-probed 2026-10-25 by DeepSeek V4.1 Flash):**
 - SDK: `google-genai` **2.33.0** imports successfully; `google-generativeai` **0.8.6** also imports but emits a deprecation warning that all support has ended. Use `google-genai`.
-- Installation: `pip install google-genai` — **works** (verified).
+- Installation: provider SDK installation is not required; the implemented
+  adapters use standard-library HTTPS and the project is installed with
+  `uv sync --project .\code`.
 - API key: required (`GEMINI_API_KEY` or `GOOGLE_API_KEY`). Neither is set in this environment.
 - `GET https://generativelanguage.googleapis.com/v1beta/models` without a key returns **403 "Method doesn't allow unregistered callers"** (verified) — so model listing and any live call **cannot be verified without a key**.
 - Tool/function calling and structured output: official documentation pages exist (`/gemini-api/docs/function-calling`, `/gemini-api/docs/structured-output`). Feature existence is documented; **runtime behaviour is UNVERIFIED** because no key was available and none was requested.
@@ -121,12 +141,15 @@ This report investigates the runtime architecture options for the "Ghost Data St
 - Free-tier models are rate-limited and may be slower / less reliable; quality on a 15-field structured audit decision is **ASSUMED** to be lower than Gemini Flash.
 - Free-model availability changes without notice → the provider must fail over dynamically rather than pin one id.
 
-### 1.3 Direct Grok API (Optional Alternative)
+### 1.3 Groq API (Implemented Fallback and Usage Verifier)
 
-**Status**: **UNVERIFIED** — Not investigated in detail
-- xAI Grok API exists but requires separate account
-- No SDK investigation performed
-- Kept as optional future alternative
+**Status**: **IMPLEMENTED; live call unverified**
+- Groq is the third runtime fallback after Gemini and OpenRouter.
+- Groq is the first provider used for independent per-case usage
+  reconciliation.
+- The adapter uses the OpenAI-compatible Groq endpoint and reads
+  `GROQ_API_KEY` and `GROQ_MODEL` from the process environment.
+- No key was supplied for this session, so a live Groq call was not performed.
 
 ### 1.4 Local Inference (Ollama) — Optional Future Fallback
 
@@ -535,21 +558,21 @@ Positively identified facts in that text: support ref `CS-4827` / `support_001`,
 
 Caveat: text extraction order is layout-dependent (ReportLab emits `Tj`/`TJ` in draw order), so label/value pairs come out as `Detail\n<value>` sequences rather than a table. The extractor must therefore emit **positional or label-anchored** facts, and anything ambiguous must be marked `confidence: low` rather than guessed.
 
-### 5.2 PNG — local OCR BLOCKED; vision API is the viable path
+### 5.2 PNG — local Tesseract OCR available; vision remains optional
 
 | Fact | Result |
 |---|---|
-| `pytesseract` 0.3.13 | installed |
-| Tesseract binary | **absent** (`shutil.which('tesseract')` → `None`) ⇒ `pytesseract` is unusable |
+| `pytesseract` | installed and wired through `code/ghostdata/pdfdocs.py` |
+| Tesseract binary | **available** — Tesseract 5.5.3 installed on Windows |
 | Images | 11 PNGs, RGB, 1500–1800 px wide (e.g. `marketing_profile_console.png` 1500×920; `account_admin_console_20260926.png` 1800×1200) |
 | Any text layer / metadata? | none found; they are rendered UI screenshots, so pixels are the only content |
 
-Two viable routes, in preference order:
+Two available routes, in preference order:
 
-1. **Vision-capable API (recommended).** Gemini `gemini-3.8-flash` accepts images natively; OpenRouter free vision models (`nvidia/nemotron-3.5-super-vl:free`, `google/gemma-4-31b-it:free`) are a zero-cost fallback. Extraction prompt must demand **verbatim field transcription plus a bounding description**, and every extracted field is stored with `extractor=vision`, `confidence`, and the `evidence_id` — never as ground truth.
-2. **Local Tesseract (optional, user action).** Install the Windows Tesseract build (~50 MB, free/open-source) and set `TESSERACT_CMD`. Fully offline, no quota, weaker on stylised UI fonts. Only worth it if the evaluation environment has no network.
+1. **Local Tesseract (implemented).** `pytesseract` invokes the local binary, with `TESSERACT_CMD` available for nonstandard installations and `GHOSTDATA_OCR_LANG` for language selection. It is fully offline and has no quota, but may be weaker on stylised UI fonts.
+2. **Vision-capable API (optional).** Gemini `gemini-3.8-flash` accepts images natively; OpenRouter free vision models (`nvidia/nemotron-3.5-super-vl:free`, `google/gemma-4-31b-it:free`) are possible fallbacks when credentials are deliberately configured. Extraction must demand **verbatim field transcription plus a bounding description**, and every extracted field must carry `extractor=vision`, `confidence`, and the `evidence_id` — never ground truth.
 
-Consistency check that makes vision output trustworthy: run one image through **both** routes during development and diff the transcribed fields; the 22 screenshots-with-known-content cases are the natural calibration set. If they disagree on identifiers, the field is marked unresolved rather than averaged.
+Consistency check for any future vision route: run an image through both routes and diff the transcribed fields. If they disagree on identifiers, mark the field unresolved rather than averaging it.
 
 Impact: `case_31`/`case_32` previously depended on `deleted_account_reference_20260310.png`; their account ids (`account_4857`, `account_8858`) are already recoverable from the parsed bundle, so the PNG is corroboration rather than a hard dependency. **No case is currently blocked on OCR** — the gap is completeness of findings, not producibility of a row.
 
@@ -568,7 +591,7 @@ Impact: `case_31`/`case_32` previously depended on `deleted_account_reference_20
 | FastAPI | **Rejected** | The contract is a CLI that writes `output.csv`. A web service adds a process to supervise, ports to bind, and an attack surface, for zero scoring benefit. |
 | Agent framework (LangGraph/CrewAI/etc.) | **Rejected** | The controller is ~200 lines of loop + budget logic; a framework would obscure determinism and add a dependency chain the evaluation may not have network access to install. |
 
-**Gate 5.1 (PDF): PASS. Gate 5.2 (PNG/OCR local): BLOCKED. Gate 5.3 (vision API): UNVERIFIED (no credentials). Gate 5.4 (search/identity/provenance design): PASS. Gate 5.5 (SQLite/FastAPI): PASS as a decision to omit.**
+**Gate 5.1 (PDF): PASS. Gate 5.2 (PNG/OCR local): PASS with conservative fallback. Gate 5.3 (vision API): UNVERIFIED (no credentials). Gate 5.4 (search/identity/provenance design): PASS. Gate 5.5 (SQLite/FastAPI): PASS as a decision to omit.**
 
 ---
 
@@ -669,15 +692,16 @@ code/
     evaluation_report.md  usage_report.md  design_gate_report.md
     runtime_architecture_options.md  custom_cases/ (>=3 synthetic)
   README.md                        # setup + keyless run + keyed run
-  requirements.txt                 # pinned: pypdf, google-genai, openai (all optional at runtime)
-  .env.example                     # NAMES ONLY, no values
+  code/pyproject.toml              # uv project metadata and dependencies
+  code/uv.lock                     # reproducible dependency resolution
+  code/.env.example                # NAMES ONLY, no values
 ```
 
 Mapping to the existing code is deliberately conservative: **11 files kept, 2 modified, 12 added, 1 rewritten orchestration, 2 M2 modules retired** (`absence.py` → `policy/rules.py`; `state.py` absorbed into `policy/` + `verify/`). The `ghostdata` package name and `code/main.py` CLI stay, so submission conventions and the existing M1 tests keep working.
 
 ### 7.3 `code.zip` contents and exclusions
 
-Include: `code/**` (sources, tests, config), `README.md`, `requirements.txt`, `.env.example`, `evaluation/*.md`, `evaluation/custom_cases/`.
+Include: `code/**` (sources, tests, config, setup, and evaluation reports).
 Exclude: `dataset/`, `output.csv` (submitted separately per §6.9), `.env`, `.cache/`, `__pycache__`, `*.pyc`, `code.zip` itself, agent traces, any virtualenv.
 Remove before packaging: the stray empty `code/evaluation/main.py`.
 
@@ -691,7 +715,7 @@ Remove before packaging: the stray empty `code/evaluation/main.py`.
 
 | Concern | Control |
 |---|---|
-| Where keys live | process environment only (`GEMINI_API_KEY`/`GOOGLE_API_KEY`, `OPENROUTER_API_KEY`); `.env` is user-created and git-ignored |
+| Where keys live | process environment only (`GEMINI_API_KEY`, `OPENROUTER_API_KEY`, `GROQ_API_KEY`); `code/.env` is user-created and git-ignored |
 | Where keys must never appear | source, `README.md`, `log.txt`, provenance JSONL, run manifest, `evaluation/*.md`, `code.zip` |
 | Redaction | a logging filter rewrites any token matching `AIza[0-9A-Za-z\-_]{35}`, `sk-[A-Za-z0-9]{20,}`, `sk-or-v1-[A-Za-z0-9]{20,}` to `[REDACTED]` **before** the record is written |
 | Leak detection at packaging | pre-zip scan over the archive contents for the same patterns + a literal check that the resolved key value (if set) appears nowhere; abort packaging on any hit |
@@ -718,11 +742,15 @@ Structured JSONL is chosen over `print` because the validator and `usage_report.
 
 ### 8.4 Dependencies
 
-Pinned in `requirements.txt`; each is installed today and version-checked: `pypdf==6.21.2` (required), `google-genai==2.33.0` (optional), `openai==3.37.0` (optional), `Pillow` (optional, image preprocessing). Degradation is explicit:
+Declared in `code/pyproject.toml` and locked in `code/uv.lock`; the OCR stack
+is installed and version-checked: `pypdf`, `Pillow`, `pytesseract`, and
+`PyMuPDF`. Provider SDKs remain unnecessary because adapters use standard
+library HTTPS. Degradation is explicit:
 
 | Missing | Effect |
 |---|---|
 | `pypdf` | PDFs become `unparsed` — degrade, log, continue (tests T-09) |
+| `pytesseract`, Pillow, PyMuPDF, or Tesseract | PNGs and PDF OCR fallback become explicit `UNREADABLE`/unavailable observations; no OCR fact is invented |
 | `google-genai` | Gemini provider unavailable ⇒ OpenRouter or deterministic |
 | `openai` | OpenRouter unavailable ⇒ Gemini or deterministic |
 | all of the above | deterministic-only run, still valid `output.csv` |
@@ -763,7 +791,7 @@ Every row is runnable **without any API key** by injecting a fake provider trans
 | T-08 | Safe stopping | evidence saturated | `STOP` fires; output row still emitted; reason recorded |
 | T-09 | Missing dependency | hide `pypdf` | PDFs degrade to `unparsed`, run completes, gap recorded |
 | T-10 | Partial PDF text | truncated/corrupt PDF | no exception escapes; partial facts kept with `confidence: low` |
-| T-11 | OCR unavailable | vision provider absent **and** no Tesseract | image-dependent findings marked `UNRESOLVED`; **no invented field values** |
+| T-11 | OCR unavailable | vision provider absent, missing OCR dependency, or no Tesseract | image-dependent findings marked `UNRESOLVED`/`UNREADABLE`; **no invented field values** |
 | T-12 | Keyless end-to-end | `env -u GEMINI_API_KEY -u OPENROUTER_API_KEY` full run on 32 samples | 32/32 rows, schema-valid, no network attempted |
 | T-13 | Secret leak scan | plant a fake key, run packaging scan | scan aborts; `[REDACTED]` in logs; planted value absent from archive |
 | T-14 | CSV contract | validate emitted file | exact header `case_id,deletion_status,steps_json`; 518 rows; sorted; one row per `case_id`; statuses in the allowed set; `steps_json` parses |
@@ -786,11 +814,11 @@ These are **negative** tests: they assert that weak signals do *not* create owne
 
 ### 9.3 Regression and generalisation tests
 
-- **Regression (32 public cases, `dataset/sample_output.csv`)** — used **only** as a regression signal, never as a lookup table. Baseline to beat: 22/32 status (M2). Target: ≥30/32 status, and step-level exact match ≥60% (the 3.1% baseline is dominated by ordering/noise, so step-level is measured per-field as well as exact).
+- **Regression (32 public cases, `dataset/sample_output.csv`)** — used **only** as a regression signal, never as a lookup table. Current validated baseline: 32/32 status matches and 0/32 exact-step matches after the deterministic evidence and OCR updates. Exact-step work remains pending; the current CLI and unit baseline must not regress.
 - **Generalisation (≥3 participant-authored cases, required by §6.8)** — constructed by mutation of public evidence with **new** identifiers, not copied answers: (1) unfamiliar log syntax with a renamed field set; (2) contradictory snapshot vs activity claim; (3) active sync/restore that recreates a deleted record after the workflow reported COMPLETE. These live in `evaluation/custom_cases/` with expected outputs derived by hand from the rules, and are the cases reported in `evaluation_report.md`.
 - **Determinism** — the 32-case regression is run twice and the `steps_json` diffed byte-for-byte; any drift is a failure (it would mean temperature, ordering, or dict iteration leaked into output).
 
-**Gate 9.1 (evaluation plan): PASS as a design (T-01…T-17, A-01…A-06 specified). Gate 9.2 (tests executed): NOT RUN — this is a design gate; no production implementation exists to test.**
+**Gate 9.1 (evaluation plan): PASS as a design (T-01…T-17, A-01…A-06 specified). Gate 9.2 (implemented runtime checks): PASS for 64 unit tests and the keyless sample smoke test; keyed provider calls remain unverified.**
 
 ---
 
@@ -803,12 +831,12 @@ These are **negative** tests: they assert that weak signals do *not* create owne
 | **A. Provider comparison (Gemini / OpenRouter / Grok)** | **PASS** (comparison) | SDKs import (verified versions); pricing read from official page; OpenRouter catalogue queried live (466 models / 20 free / 17 with tools) |
 | A1. Gemini live inference, tools, structured output | **UNVERIFIED** | no key in environment; `/v1beta/models` returns 403 unauthenticated |
 | A2. OpenRouter live inference | **UNVERIFIED** | no key; only the public model list was exercised |
-| A3. Direct Grok API | **UNVERIFIED** | not investigated — optional, and adds no capability the other two lack |
+| A3. Groq API | **IMPLEMENTED / UNVERIFIED LIVE** | adapter, fallback routing, and usage verifier exist; no credential was supplied for a live call |
 | **B. Recommended provider configuration** | **PASS** | primary/fallback selected, capability router, error taxonomy, budget caps, usage pass-through defined |
 | **C. Local-model feasibility** | **PASS as investigation / BLOCKED as primary** | GTX 1650 4096 MiB + 7.87 GiB RAM measured; 7–8B does not fit; 3–4B fits but is not adequate for 15-field cited output |
 | **D. Agent architecture** | **PASS** | three options compared; (c) deterministic engine + bounded LLM assist recommended; multi-agent rejected with reasons |
 | **E1. PDF extraction (pypdf)** | **PASS** | all 4 corpus PDFs extract (617–1003 chars each), incl. the `evidence_58` gap from M2 |
-| **E2. Local OCR (Tesseract)** | **BLOCKED** | binary absent; `pytesseract` installed but non-functional |
+| **E2. Local OCR (Tesseract)** | **PASS with safeguards** | Tesseract 5.5.3, pytesseract, Pillow, and PyMuPDF installed; language availability is recorded and missing OCR remains explicit |
 | **E3. Vision API for 11 PNGs** | **UNVERIFIED** | viable free models identified; no call made (no key) |
 | **E4. Search / identity / provenance / state-at-`audit_at`** | **PASS** (design) | reuses tested M0–M1 index + ledger; tiered attribution specified |
 | **E5. SQLite / FastAPI / agent framework** | **PASS (decision: omit)** | no benefit at 94 files / 4k rows; CLI contract unchanged |
@@ -816,7 +844,7 @@ These are **negative** tests: they assert that weak signals do *not* create owne
 | **G. Project structure** | **PASS** (proposal) | additive map against current tree; entry point preserved; no files moved |
 | **H. Security & reliability** | **PASS** (design) | secrets from env, redaction, pre-zip scan, retry/circuit-breaker, safe failure |
 | **I. Evaluation plan** | **PASS** (design) | 17 behavioural tests + 6 attribution negative tests, all runnable without keys |
-| I2. Tests actually executed for this feature set | **NOT RUN** | no implementation — out of scope for this gate |
+| I2. Tests actually executed for this feature set | **PASS for implemented runtime path** | 64 unit tests pass; keyless `runtime-samples` smoke test processes 32 cases with zero provider calls; keyed live calls remain pending |
 
 ### 10.2 Verified findings (reproduced in this session)
 
@@ -824,7 +852,7 @@ These are **negative** tests: they assert that weak signals do *not* create owne
 2. Gemini pricing: `gemini-3.8-flash` and `gemini-3.5-flash-lite` are **free of charge** on the free tier; `gemini-4-argon` and `gemini-3.1-pro-preview` are paid-only. Paid Flash rates $0.75/$3.75 per 1M tokens through 2026-12-31.
 3. Gemini API rejects unauthenticated model listing with HTTP 403 — no key was present, so no live call was possible.
 4. OpenRouter `/api/v1/models` is public: 466 models, 20 free, 17 free models declare tool support, several accept image input.
-5. `pypdf` 6.21.2 extracts all 4 PDFs; `tesseract` and `ollama` are absent; 11 PNGs are RGB screenshots with no text layer.
+5. `pypdf` extracts all 4 PDFs; Tesseract 5.5.3 is installed and processes the 11 RGB PNG screenshots; Ollama is not used.
 6. Hardware: GTX 1650, **4096 MiB VRAM**, driver 591.74, 7.87 GiB RAM (two independent sources agree).
 7. Repository contains **no** rule granting network access or credentials at evaluation time, and the usage-report requirement implies model use is anticipated but not mandatory.
 
@@ -834,10 +862,10 @@ These are **negative** tests: they assert that weak signals do *not* create owne
 |---|---|---|---|---|
 | 1 | Create a Google AI Studio key; export `GEMINI_API_KEY` in the shell only | primary provider + vision | $0 on free tier | **Never** paste it into chat, code, or `log.txt` |
 | 2 | Confirm the free-tier limits visible in AI Studio (RPM/TPM/RPD) | capacity planning for 518 cases | $0 | numbers could not be read statically → still UNVERIFIED |
-| 3 | (Optional) `OPENROUTER_API_KEY` | fallback + free vision | $0 | free models only; no paid routing |
-| 4 | (Optional) install the Windows Tesseract build | offline OCR of 11 PNGs | $0 | only if grading may be offline and vision is unavailable |
-| 5 | Ask organisers whether grading has network/credential access | resolves Gate F | $0 | highest-value open question; design is already safe either way |
-| 6 | Approve eventual dependency additions (`pypdf`, `google-genai`, `openai`) | implementation | $0 | installed already; must be optional at runtime |
+| 3 | (Optional) `OPENROUTER_API_KEY` | fallback provider | $0 | credentials remain process-environment only |
+| 4 | (Optional) `GROQ_API_KEY` | fallback provider and usage verifier | $0 | credentials remain process-environment only |
+| 5 | Ask organisers whether grading has network/credential access | resolves Gate F | $0 | deterministic keyless execution remains available |
+| 6 | `uv sync --project .\code` | OCR and PDF processing | $0 | provider adapters use stdlib HTTP and do not require provider SDKs |
 
 ### 10.4 Unresolved decisions (need user/reviewer input)
 
@@ -845,7 +873,7 @@ These are **negative** tests: they assert that weak signals do *not* create owne
 |---|---|---|---|
 | D1 | Default `GHOST_AUDIT_LLM_MODE` for the graded run | `assist` / `off` | `assist` with deterministic fallback, **if** a keyed dry run proves stability; otherwise `off` |
 | D2 | Ship the content-addressed LLM cache in `code.zip`? | ship / regenerate | **regenerate** — avoids any appearance of pre-baked answers |
-| D3 | PNG strategy | vision API / local Tesseract / both | vision API primary, Tesseract optional |
+| D3 | PNG strategy | vision API / local Tesseract / both | local Tesseract implemented; vision API remains optional |
 | D4 | Run a live smoke test with the user's key | yes / no | yes, but only on explicit approval — it consumes real free-tier quota (no charge) |
 | D5 | How much of M2 to keep | salvage `state.py` / rewrite | salvage parsers + ledger only; rewrite decision path |
 
@@ -853,10 +881,10 @@ These are **negative** tests: they assert that weak signals do *not* create owne
 
 | Blocker | Impact | Unblock by |
 |---|---|---|
-| No credentials in the environment | Gemini/OpenRouter inference, tools, structured output, vision all **UNVERIFIED** | user action 1 (+4) |
-| No OCR binary | local reading of 11 PNGs impossible | user action 4, or vision route |
+| No credentials in the environment | Live Gemini/OpenRouter/Groq inference and external usage verification remain **UNVERIFIED** | user action 1 (+4) |
+| Missing OCR dependency or language data | Some image facts remain unavailable | install the declared stack and required Tesseract language data |
 | Evaluation network/credential policy unknown | cannot tune default mode with confidence | user action 5 |
-| M2 accuracy 22/32 (68.8%) | current code is not competitive | implementation milestones M1–M5 below |
+| Exact-step accuracy 0/32 | Statuses match, but many expected steps remain unresolved | continue evidence, remediation, and validator work |
 | Free-tier rate-limit numbers unverified | 518-case run may hit daily quota | measure during first keyed run; add cap + resume |
 
 ### 10.6 Revised milestones (supersede those in `design_gate_report.md`)
@@ -866,13 +894,28 @@ These are **negative** tests: they assert that weak signals do *not* create owne
 | **M1** | Evidence store + provenance JSONL + PDF adapter; delete hardcoded `SERVICE_EXPORT_FILES` / `AUTHORITATIVE_SNAPSHOTS` / `SYSTEM_ID_MAP` | all 94 files indexed with provenance; PDFs parsed; 44 existing unit tests still green |
 | **M2** | Tiered attribution (`DIRECT`/`CORROBORATED`/`CLAIM_ONLY`/`UNRESOLVED`) + A-01…A-06 negative tests | decoys not merged; `account_6440` resolved only via corroboration; 0 false links on the 32 samples |
 | **M3** | Policy obligations + planner + total ordering + blocking validator (T-14…T-16) | 0 schema/ordering/citation violations on 32 samples |
-| **M4** | Provider adapters + router + cache + usage ledger (keyed, optional) | T-01…T-08 pass with stub transport; live smoke test recorded |
-| **M5** | Bounded investigation controller wired to the four permitted LLM questions | T-07/T-08 pass; per-case calls ≤6; keyless run unaffected |
+| **M4** | Provider adapters + fallback router + bounded agent loop + usage ledger/verifier | 64 unit tests pass; keyless smoke test completes; live smoke test remains pending |
+| **M5** | Bounded investigation controller wired to the permitted action menu | Runtime loop is capped at four calls per case; duplicate actions stop the loop; keyless run is unaffected |
 | **M6** | Regression ≥30/32 status, step-level ≥60%, 3 custom cases, determinism double-run | `evaluation_report.md` filled with measured numbers only |
-| **M7** | `usage_report.md` from the real ledger, README, `.env.example`, pre-zip secret scan, package | T-13 passes; archive contains no dataset/keys |
+| **M7** | `usage_report.md` from the real ledger, `code/README.md`, `code/Setup.md`, `code/.env.example`, pre-zip secret scan, package | T-13 passes; archive contains no dataset/keys |
 
 ### 10.7 Bottom line
 
-The architecture is settled and cheap to build: **deterministic audit engine + bounded LLM assistance + provider-independent adapters + keyless fallback**. The two things that could still invalidate it are both external and both resolvable by the user: whether grading permits network/credentials (Gate F), and whether a keyed dry run behaves as documented (Gate A1/A2). Neither blocks starting M1, which is entirely offline.
+The architecture is implemented as a **deterministic audit engine + bounded LLM
+assistance + provider-independent adapters + keyless fallback**. The remaining
+external validation is a keyed smoke test for Gemini, OpenRouter, and Groq,
+including Groq-first usage reconciliation. These calls are optional and cannot
+override deterministic findings or final statuses.
 
-**Scope confirmation:** no production audit code was modified, `output.csv` was not generated, the 518-case run was not executed, nothing was packaged or submitted, and no API key was requested, used, or exposed.
+**Scope confirmation:** runtime provider code and tests are implemented;
+`output.csv` was not generated, the 518-case run was not executed, nothing was
+packaged or submitted, and no API key was requested, used, or exposed.
+## Current verified addendum � 2026-10-25
+
+- `uv sync --project .\code` and the locked environment are the supported installation path.
+- `code/evaluation/validator.py` now blocks malformed output before atomic CSV replacement.
+- The full unit suite is **76/76 passing**.
+- Public status accuracy is **32/32**. Exact step-key accuracy is **7/32** and full exact-step accuracy is **1/32**.
+- Owner-linked present records with identifiers and explicit backup restore candidates now reconstruct to actionable states.
+- Activity-only ownership and absence claims remain unresolved by design; no expected step is emitted without participant-visible corroboration.
+- A keyed-safe smoke attempt returned Gemini HTTP 404 and OpenRouter/Groq HTTP 403. No model usage record was created.

@@ -28,6 +28,40 @@ repo_root=C:\Users\rahul\OneDrive\Desktop\CTS\hackerrank-orchestrate-october26
 worktree=main checkout
 parent_agent=none
 
+## [2026-10-25T14:45:00+05:30] Completed Task 10 readiness and controlled full evaluation
+
+User Prompt (verbatim, secrets redacted):
+Finish readiness checks which is task 10, then inspect the output and accuracy.
+
+Agent Response Summary:
+Readiness checks passed for the deterministic output path. The controlled full evaluation was then exposed through a validated CLI command and completed successfully. The output writer validated the complete request set before atomically creating the root output.csv.
+
+Measured results:
+* Unit suite: 76/76 passed.
+* CLI self-test: passed.
+* Evidence summary: 94 files parsed and 4,011 activity rows loaded.
+* Public statuses: 32/32.
+* Public exact step-key matches: 7/32.
+* Public full exact-step matches: 1/32.
+* Full output: 518 validated rows and 2,354 steps.
+* Full status distribution: 171 COMPLETE, 337 INCOMPLETE, 10 NOT_APPLICABLE.
+* Reproducibility: passed; repeated output SHA-256 hashes matched.
+* Provider calls: 0; model tokens and cost: 0.
+
+Actions:
+* Added the controlled evaluate-full CLI command.
+* Added evaluation/readiness.md, evaluation/evaluation_report.md, and evaluation/usage_report.md.
+* Updated TODO.md, code/README.md, and the design gate report.
+* No dataset files or root README.md were changed.
+
+Context:
+tool=Copilot SDK in VS Code
+model=runtime-configured Copilot model
+branch=main
+repo_root=C:\Users\rahul\OneDrive\Desktop\CTS\hackerrank-orchestrate-october26
+worktree=main checkout
+parent_agent=none
+
 ## [2026-10-24T19:20:00+05:30] M0-M1 build start: evidence ledger + identity resolver
 
 User Prompt (verbatim, secrets redacted):
@@ -864,6 +898,193 @@ Actions:
 * Replaced TODO.md with the consolidated checklist.
 * Removed COPILOT_TASKS.md.
 * No source code or dataset files changed.
+
+Context:
+tool=Copilot SDK in VS Code
+model=runtime-configured Copilot model
+branch=main
+repo_root=C:\Users\rahul\OneDrive\Desktop\CTS\hackerrank-orchestrate-october26
+worktree=main checkout
+parent_agent=none
+## [2026-10-25T13:38:39+05:30] Integrated Tesseract OCR
+
+User Prompt (verbatim, secrets redacted):
+Lets integrate Tesseract OCR in the project, tell me what you need form me
+
+Agent Response Summary:
+Integrated Tesseract OCR for PNG evidence and as a PDF fallback when pypdf yields no supported identifiers. The implementation preserves provenance, raw OCR text on grounded observations, requested and used language diagnostics, and explicit unreadable results when OCR is unavailable. OCR-derived identifiers still require normal ownership and audit-time validation and cannot alone prove deletion, absence, or completion.
+
+Actions:
+* Installed Tesseract OCR 5.5.3 through winget.
+* Added OCR/PDF dependencies in code/requirements.txt and installed them.
+* Updated code/ghostdata/pdfdocs.py and code/ghostdata/ledger.py.
+* Updated OCR tests, code/README.md, and TODO.md.
+* Ran 62 unit tests and the public sample evaluation.
+* Removed generated __pycache__ directories.
+
+Validation:
+* Unit tests: 62 passed.
+* Public sample statuses: 32/32 matched.
+* Public sample exact-step matches: 0/32.
+* OCR inventory: 11/11 PNGs OCR-completed with 19 observations; 4 PDFs parsed with 2 observations, including 2 Tesseract fallback runs.
+
+Context:
+tool=Copilot SDK in VS Code
+model=runtime-configured Copilot model
+branch=main
+repo_root=C:\Users\rahul\OneDrive\Desktop\CTS\hackerrank-orchestrate-october26
+worktree=main checkout
+parent_agent=none
+## [2026-10-25T13:43:02+05:30] Updated evaluation architecture reports
+
+User Prompt (verbatim, secrets redacted):
+Update these files: code/evaluation/design_gate_report.md and code/evaluation/runtime_architecture_options.md
+
+Agent Response Summary:
+Updated both evaluation reports to reflect the implemented Tesseract OCR integration, current dependency file, PNG OCR and PDF fallback behavior, explicit unreadable fallback, and conservative evidence policy. Corrected stale claims that local OCR was blocked and updated the measured regression baseline to 32/32 status matches, 0/32 exact-step matches, and 62 passing unit tests.
+
+Actions:
+* Updated code/evaluation/design_gate_report.md.
+* Updated code/evaluation/runtime_architecture_options.md.
+* No source code or dataset files changed.
+
+Context:
+tool=Copilot SDK in VS Code
+model=runtime-configured Copilot model
+branch=main
+repo_root=C:\Users\rahul\OneDrive\Desktop\CTS\hackerrank-orchestrate-october26
+worktree=main checkout
+parent_agent=none
+## [2026-10-25T13:49:48+05:30] Integrated runtime model providers and usage verification
+
+User Prompt (verbatim, secrets redacted):
+Integrate Runtime model API for runtime agentic loop with Gemini as primary LLM and fallback openrouter and Groq; also integrate External model API to verify token usage per case using Groq and keep openrouter and gemini as fallback.
+
+Agent Response Summary:
+Added an optional provider-independent runtime layer. Gemini is the runtime primary, followed by OpenRouter and Groq; the bounded agent loop can suggest only investigation actions and cannot change deterministic ownership, deletion status, absence, or final steps. Added a Groq-first per-case usage reconciliation call with OpenRouter and Gemini fallbacks. Provider-reported usage metadata is recorded without estimation, and credentials are read only from environment variables.
+
+Actions:
+* Added code/ghostdata/runtime/providers.py, agent.py, usage.py, and package exports.
+* Added runtime-samples and runtime-samples --verify-usage CLI commands.
+* Added .env.example with empty credential placeholders.
+* Added runtime unit tests and updated README, TODO, and evaluation architecture reports.
+* Ran the full unit suite and keyless runtime smoke test.
+* Removed generated caches and runtime usage artifacts.
+
+Validation:
+* Unit tests: 64 passed.
+* Keyless runtime smoke test: 32 cases processed, 0 provider calls, deterministic statuses preserved.
+* Public sample baseline: 32/32 status matches, 0/32 exact-step matches.
+* No API keys were supplied, requested, logged, or committed; live provider smoke testing remains pending.
+
+Context:
+tool=Copilot SDK in VS Code
+model=runtime-configured Copilot model
+branch=main
+repo_root=C:\Users\rahul\OneDrive\Desktop\CTS\hackerrank-orchestrate-october26
+worktree=main checkout
+parent_agent=none
+## [2026-10-25T13:52:02+05:30] Created code setup guide
+
+User Prompt (verbatim, secrets redacted):
+Create a Setup.md in code folder providing information related to setups, installations, requirements, running server, testing etc
+
+Agent Response Summary:
+Created code/Setup.md with Windows-focused setup instructions, Python environment and dependency installation, Tesseract OCR configuration, optional Gemini/OpenRouter/Groq provider setup, deterministic and runtime commands, tests, usage verification, server clarification, safety restrictions, and cleanup steps. The guide makes clear that this project is a CLI and does not require an HTTP server.
+
+Actions:
+* Created code/Setup.md.
+* No source code or dataset files changed.
+* No tests run because this was documentation-only work.
+
+Context:
+tool=Copilot SDK in VS Code
+model=runtime-configured Copilot model
+branch=main
+repo_root=C:\Users\rahul\OneDrive\Desktop\CTS\hackerrank-orchestrate-october26
+worktree=main checkout
+parent_agent=none
+## [2026-10-25T13:55:38+05:30] Moved project configuration into code folder
+
+User Prompt (verbatim, secrets redacted):
+Revert changes in root Readme.md it must not be altered under any condition, whatever update in Readme.md is to be done pertaining to project is to be done within code/Readme.md, also .env.example must be shifted to code folder and add git ignore file in code folder. The project, its setup, details, env, everything in code folder. Root must not be changed. Only TODO.md and log.txt may be changed in root.
+
+Agent Response Summary:
+Restored the root README to its previous content by removing the runtime-assistance paragraph added in the prior turn. Moved .env.example to code/.env.example, added code/.gitignore for secrets, environments, caches, and runtime diagnostics, and corrected Setup.md to reference the new configuration location. No other root project file was changed.
+
+Actions:
+* Restored README.md.
+* Deleted root .env.example and created code/.env.example.
+* Created code/.gitignore.
+* Updated code/Setup.md.
+* Verified the root README no longer contains the runtime-samples paragraph.
+
+Context:
+tool=Copilot SDK in VS Code
+model=runtime-configured Copilot model
+branch=main
+repo_root=C:\Users\rahul\OneDrive\Desktop\CTS\hackerrank-orchestrate-october26
+worktree=main checkout
+parent_agent=none
+## [2026-10-25T13:57:55+05:30] Updated runtime architecture documentation
+
+User Prompt (verbatim, secrets redacted):
+Update the documentation
+
+Agent Response Summary:
+Updated code/evaluation/runtime_architecture_options.md to match the implemented runtime provider layer and current project structure. The report now documents Gemini -> OpenRouter -> Groq runtime routing, Groq -> OpenRouter -> Gemini usage verification, bounded agent behavior, keyless validation, Tesseract availability, code-local configuration, and the remaining unverified keyed smoke test. Stale claims about absent OCR, unimplemented Groq support, root .env.example placement, and no production implementation were corrected.
+
+Actions:
+* Updated code/evaluation/runtime_architecture_options.md.
+* No source code or dataset files changed.
+* No tests run because this was documentation-only work.
+
+Context:
+tool=Copilot SDK in VS Code
+model=runtime-configured Copilot model
+branch=main
+repo_root=C:\Users\rahul\OneDrive\Desktop\CTS\hackerrank-orchestrate-october26
+worktree=main checkout
+parent_agent=none
+## [2026-10-25T14:01:14+05:30] Synchronized design gate, TODO, log, and code README  User Prompt (verbatim, secrets redacted): Update this as well, and check if Todo and log are updated accordingly. Also the code/readme.md is updated or not.  Agent Response Summary: Updated the design gate report to describe the implemented optional Gemini -> OpenRouter -> Groq runtime path, Groq-first usage verification, keyless fallback, Tesseract status, 64 passing tests, and the remaining keyed smoke-test limitation. Verified and corrected code/README.md, updated TODO.md to the 64-test milestone and code-local environment path, and confirmed the current log entry requirements are satisfied.  Actions: * Updated code/evaluation/design_gate_report.md. * Updated code/README.md folder layout and runtime documentation. * Updated TODO.md runtime task file path and test count. * Verified code/.env.example and code/.gitignore exist. * No source code or dataset files changed. * No tests run because this was documentation-only work.  Context: tool=Copilot SDK in VS Code model=runtime-configured Copilot model branch=main repo_root=C:\Users\rahul\OneDrive\Desktop\CTS\hackerrank-orchestrate-october26 worktree=main checkout parent_agent=none
+## [2026-10-25T14:01:21+05:30] Documentation synchronization log-format correction
+
+User Prompt (verbatim, secrets redacted):
+Update this as well, and check if Todo and log are updated accordingly. Also the code/readme.md is updated or not.
+
+Agent Response Summary:
+Confirmed that the design-gate report, TODO.md, code/README.md, code/.env.example, and code/.gitignore reflect the implemented OCR and runtime provider paths. Added this properly formatted follow-up entry because the immediately preceding log append was flattened by the shell output method; prior log history remains unchanged.
+
+Actions:
+* Verified documentation files and current runtime/provider references.
+* Verified the 64-test milestone in TODO.md and code/README.md.
+* No source code or dataset files changed.
+
+Context:
+tool=Copilot SDK in VS Code
+model=runtime-configured Copilot model
+branch=main
+repo_root=C:\Users\rahul\OneDrive\Desktop\CTS\hackerrank-orchestrate-october26
+worktree=main checkout
+parent_agent=none
+## [2026-10-25T14:18:02+05:30] Converted project to uv and completed hybrid runtime smoke test  User Prompt (verbatim, secrets redacted): I have provided the Api keys needed, Now this project is supposed to be an hybrid project and not just deterministic. It is deletion audit agent so an Ai agent with deterministic rules and guardrails. So make the project, also if required restructure the code folder and make it production ready. The python installations should be converted from pip etc to uv. After completion and updation of all the .md documentation in code folder and todo.md and log.txt, give me a report on the working and current condition of the entire codebase.  Agent Response Summary: Converted installation and execution documentation to uv, added pyproject.toml and uv.lock, and synchronized the project environment. Strengthened the hybrid runtime so bounded model actions execute only deterministic investigation tools and cannot change audit conclusions. The keyed-safe smoke reached configured providers but received Gemini HTTP 404 and OpenRouter/Groq HTTP 403; deterministic processing remained intact and no provider usage or secrets were recorded.  Actions: * Added code/pyproject.toml and generated code/uv.lock. * Added python-dotenv loading for the uncommitted code/.env file. * Fixed OpenAI-compatible Authorization headers to use the configured key without logging it. * Added deterministic investigation-tool execution and safe provider-failure diagnostics. * Updated code/README.md, code/Setup.md, code/evaluation/design_gate_report.md, and code/evaluation/runtime_architecture_options.md. * Updated TODO.md with the 67-test baseline, uv migration, and provider-access blocker. * Ran 67 unit tests: all passed. * Ran public regression: 32/32 status matches; exact steps remain 0/32. * Ran keyed-safe runtime smoke: 32 cases preserved deterministic statuses; 0 provider calls recorded due provider HTTP failures.  Context: tool=Copilot SDK in VS Code model=runtime model identifier not exposed in session metadata branch=unknown repo_root=C:\Users\rahul\OneDrive\Desktop\CTS\hackerrank-orchestrate-october26 worktree=main checkout parent_agent=none
+
+## [2026-10-25T15:00:00+05:30] Completed Task 9 validation and policy/order refinement
+
+User Prompt (verbatim, secrets redacted):
+Perform TODO 9, complete partly done tasks, improve exact-step matches, and update documentation and gitignore.
+
+Agent Response Summary:
+Completed the output-validation and atomic-write work, then refined deterministic state and policy handling without weakening ownership safeguards. Support records now use supplied record attributes to distinguish deletable attachments or records without a shared-retention marker from support messages that require redaction. Planner output is globally ordered as FINDING, REMEDIATION, then VERIFICATION.
+
+Actions:
+* Added and tested attribute-aware support policy handling.
+* Preserved conservative blocking for activity-only ownership and absence claims.
+* Updated TODO.md, code/README.md, and current evaluation addenda to the verified 76-test baseline.
+* Ran the full unit suite: 76 tests passed.
+* Ran the public sample regression: 32/32 status matches, 7/32 exact step-key matches, and 1/32 full exact-step matches.
+* No full 518-case evaluation, root output.csv, or submission package was created.
+* No dataset files or root README.md were changed.
 
 Context:
 tool=Copilot SDK in VS Code

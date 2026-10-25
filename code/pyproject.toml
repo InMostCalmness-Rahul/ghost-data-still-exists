@@ -1,0 +1,15 @@
+[project]
+name = "ghost-data-audit"
+version = "0.1.0"
+description = "Hybrid deterministic and bounded-LLM deletion audit agent"
+requires-python = ">=3.12"
+dependencies = [
+    "Pillow>=10.0",
+    "PyMuPDF>=1.24",
+    "pypdf>=5.0",
+    "pytesseract>=0.3.13",
+    "python-dotenv>=1.0",
+]
+
+[tool.uv]
+package = false

@@ -8,8 +8,11 @@ Available commands:
                          recovered with what sample_output.csv cites
 * ``evaluate-samples`` - run the deterministic decision engine on public samples
                          without writing output artifacts
+* ``evaluate-full``    - run the validated 518-case evaluation and write output
 * ``diff-samples``    - print grouped expected-vs-actual sample differences
                          without writing output artifacts
+* ``runtime-samples`` - run the bounded optional provider loop, then use the
+                         deterministic engine for the sample conclusions
 
 The final 518-case output run is intentionally not exposed by this CLI until
 the output validator and final-run readiness checks are complete.
@@ -23,8 +26,12 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 if __package__ in (None, ""):  # allow "python code/main.py ..."
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+load_dotenv(Path(__file__).with_name(".env"), override=False)
 
 from ghostdata.csvio import load_audit_log, load_identities  # noqa: E402
 from ghostdata.identities import IdentityIndex  # noqa: E402
@@ -187,6 +194,19 @@ def command_validate_samples() -> int:
     return 0
 
 
+def command_evaluate_full(output_file: str = "output.csv") -> int:
+    from ghostdata.engine import run_evaluation
+
+    results = run_evaluation("deletion_requests.csv", output_file)
+    status_counts = Counter(result.deletion_status for result in results)
+    step_count = sum(len(result.steps) for result in results)
+    print(f"validated rows: {len(results)}")
+    print(f"status counts: {dict(sorted(status_counts.items()))}")
+    print(f"total steps: {step_count}")
+    print(f"output: {Path(output_file).resolve()}")
+    return 0
+
+
 def command_evaluate_samples() -> int:
     """Evaluate the deterministic engine against the 32 public samples."""
     import csv
@@ -241,6 +261,66 @@ def command_diff_samples(case_ids: list[str]) -> int:
     return 0
 
 
+def command_runtime_samples(verify_usage: bool) -> int:
+    """Run optional runtime assistance while keeping deterministic results authoritative."""
+    from ghostdata.csvio import load_requests
+    from ghostdata.engine import evaluate_case
+    from ghostdata.runtime import (
+        ProviderRouter,
+        RuntimeAgent,
+        RuntimeAgentConfig,
+        RuntimeModelError,
+        UsageLedger,
+        UsageVerifier,
+    )
+
+    root = Path(__file__).resolve().parents[1]
+    usage_path = root / "code" / "evaluation" / "runtime_usage.jsonl"
+    usage = UsageLedger(usage_path)
+    agent = RuntimeAgent(
+        router=ProviderRouter(),
+        config=RuntimeAgentConfig(mode="assist"),
+        usage=usage,
+    )
+    ledger = EvidenceLedger().build()
+    identity_index = IdentityIndex(load_identities(), load_audit_log())
+    requests = load_requests("sample_deletion_requests.csv")
+    assisted = 0
+    deterministic_statuses: Counter[str] = Counter()
+    for case in requests:
+        user_index = build_user_evidence_index(ledger, identity_index, case.audit_at)
+        result = evaluate_case(case, ledger, user_index, identity_index, runtime_agent=agent)
+        deterministic_statuses[result.deletion_status] += 1
+        assisted += 1
+
+    verified = 0
+    if verify_usage and usage.records:
+        verifier = UsageVerifier()
+        for case_id in sorted({record.case_id for record in usage.records}):
+            records = [record for record in usage.records if record.case_id == case_id]
+            try:
+                result = verifier.verify(case_id, records)
+            except RuntimeModelError as exc:
+                print(f"usage verification failed for {case_id}: {exc}", file=sys.stderr)
+                continue
+            if result:
+                usage.records.append(result)
+                verified += 1
+    print(f"runtime cases processed: {assisted}")
+    print(f"provider calls recorded: {len(usage.records)}")
+    print(f"usage verifications: {verified}")
+    print(f"deterministic statuses: {dict(sorted(deterministic_statuses.items()))}")
+    if agent.failures:
+        print(f"provider failures: {len(agent.failures)}")
+        for failure in agent.failures[:5]:
+            print(f"  {failure}", file=sys.stderr)
+        if len(agent.failures) > 5:
+            print(f"  ... {len(agent.failures) - 5} more", file=sys.stderr)
+    elif not usage.records:
+        print("No provider credentials were available; deterministic results were preserved.")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Ghost Data Still Exists deterministic audit agent")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -251,11 +331,29 @@ def main(argv: list[str] | None = None) -> int:
         "evaluate-samples",
         help="evaluate the decision engine on 32 samples without writing output",
     )
+    full_parser = sub.add_parser(
+        "evaluate-full",
+        help="run the controlled 518-case evaluation and write validated output",
+    )
+    full_parser.add_argument(
+        "--output",
+        default="output.csv",
+        help="validated output CSV path (default: output.csv)",
+    )
     diff_parser = sub.add_parser(
         "diff-samples",
         help="show grouped sample differences without writing output",
     )
     diff_parser.add_argument("case_ids", nargs="*", help="optional sample IDs, e.g. case_26")
+    runtime_parser = sub.add_parser(
+        "runtime-samples",
+        help="run optional Gemini/OpenRouter/Groq assistance with deterministic fallback",
+    )
+    runtime_parser.add_argument(
+        "--verify-usage",
+        action="store_true",
+        help="reconcile recorded per-case usage through Groq, then fall back",
+    )
     args = parser.parse_args(argv)
     if args.command == "selftest":
         return command_selftest()
@@ -265,8 +363,12 @@ def main(argv: list[str] | None = None) -> int:
         return command_validate_samples()
     if args.command == "evaluate-samples":
         return command_evaluate_samples()
+    if args.command == "evaluate-full":
+        return command_evaluate_full(args.output)
     if args.command == "diff-samples":
         return command_diff_samples(args.case_ids)
+    if args.command == "runtime-samples":
+        return command_runtime_samples(args.verify_usage)
     parser.error(f"unsupported command: {args.command}")
     return 2
     return 2

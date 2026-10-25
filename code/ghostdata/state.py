@@ -112,6 +112,8 @@ def _state_from_observation(obs: Observation) -> ResourceState:
                 return ResourceState.PRESENT_IDENTIFIABLE
             if obs.kind == "USER_EXPORT":
                 return ResourceState.PRESENT_IDENTIFIABLE
+            if obs.refs and obs.kind != "ACCOUNT_TOMBSTONE":
+                return ResourceState.PRESENT_IDENTIFIABLE
             return ResourceState.UNKNOWN
 
     if obs.kind == "ANALYTICS_PROFILE":
@@ -136,6 +138,13 @@ def _state_from_observation(obs: Observation) -> ResourceState:
 
     if obs.kind == "BACKUP_ARCHIVE":
         if obs.restore_allowed is True:
+            return ResourceState.PRESENT_RESTORABLE
+        if (
+            obs.restore_allowed is None
+            and str(obs.attributes.get("eligible", "")).lower() == "true"
+            and str(obs.attributes.get("deletion_block", "")).lower() != "true"
+            and obs.refs
+        ):
             return ResourceState.PRESENT_RESTORABLE
         if obs.restore_allowed is False:
             return ResourceState.BLOCKED

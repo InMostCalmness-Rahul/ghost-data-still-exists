@@ -35,7 +35,13 @@ class TestCutoff(unittest.TestCase):
         png = ledger.file_by_id("evidence_23")
         self.assertIsNotNone(png)
         self.assertEqual(png.parser_kind, "png")
-        self.assertEqual(png.records[0].attributes["evidence_status"], "UNREADABLE")
+        self.assertTrue(
+            any("OCR completed" in note or "UNREADABLE" in note for note in png.notes)
+        )
+        if png.records:
+            self.assertTrue(
+                all(obs.attributes.get("extraction") == "tesseract" for obs in png.records)
+            )
 
     def test_censored_after_audit_at(self):
         audit_at = datetime(2026, 9, 15, 12, 0, tzinfo=timezone.utc)

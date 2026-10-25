@@ -1,0 +1,23 @@
+# Local secrets and runtime configuration
+.env
+.env.*
+!.env.example
+
+# Python environments and generated files
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+
+# Runtime diagnostics and temporary outputs
+evaluation/runtime_usage.jsonl
+evaluation/*.tmp
+evaluation/regression_m2.json
+*.log
+output.csv
+output.csv.tmp
+*.zip

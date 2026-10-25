@@ -182,25 +182,28 @@
         "user_07"
       ],
       "route": "current_email",
-      "evidence_files_for_user": [],
+      "evidence_files_for_user": [
+        "evidence_58"
+      ],
       "sample_output_cited": [
         "evidence_58"
       ],
-      "cited_covered": [],
-      "cited_missing": [
+      "cited_covered": [
         "evidence_58"
       ],
+      "cited_missing": [],
       "extra_files": [],
       "expected_resources": [
         "account_007",
         "support_001"
       ],
-      "resources_recovered": [],
-      "resources_missing": [
-        "account_007",
+      "resources_recovered": [
         "support_001"
       ],
-      "resource_count": 0
+      "resources_missing": [
+        "account_007"
+      ],
+      "resource_count": 1
     },
     {
       "case_id": "case_08",
@@ -363,12 +366,11 @@
       ],
       "resources_recovered": [
         "account_9797",
+        "analytics_9914",
         "audit_record_2945"
       ],
-      "resources_missing": [
-        "analytics_9914"
-      ],
-      "resource_count": 2
+      "resources_missing": [],
+      "resource_count": 3
     },
     {
       "case_id": "case_13",

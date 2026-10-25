@@ -43,6 +43,14 @@ class TestRemediationPolicy(unittest.TestCase):
         self.assertEqual(_policy_action("SUPPORT_MESSAGE"), "REDACT")
         self.assertEqual(_policy_action("ANALYTICS_PROFILE"), "ANONYMIZE")
         self.assertEqual(_policy_action("DATA_FLOW"), "DISABLE")
+        self.assertEqual(
+            _policy_action("SUPPORT_MESSAGE", {"marker_found": "false"}),
+            "DELETE",
+        )
+        self.assertEqual(
+            _policy_action("SUPPORT_MESSAGE", {"marker_found": "true"}),
+            "REDACT",
+        )
 
     def test_backup_restore_risk_is_planned_and_verified(self):
         snapshot = UserStateSnapshot("user_01", AUDIT)
@@ -84,6 +92,23 @@ class TestRemediationPolicy(unittest.TestCase):
         self.assertEqual(steps[0].phase, Phase.VERIFICATION)
         self.assertEqual(steps[0].operation, Operation.VERIFY_DATA_FLOW_DISABLED)
         self.assertEqual(steps[0].state, State.DISABLED)
+
+    def test_steps_are_grouped_by_phase(self):
+        snapshot = UserStateSnapshot("user_01", AUDIT)
+        snapshot.add_resource(record(
+            "account_01", "USER_PROFILE",
+            ResourceState.PRESENT_IDENTIFIABLE, "account_service",
+        ))
+        snapshot.add_resource(record(
+            "search_01", "SEARCH_INDEX_ENTRY",
+            ResourceState.PRESENT_IDENTIFIABLE, "search_service",
+        ))
+        steps = plan_remediation("user_01", AUDIT, snapshot, {}, [])
+        ranks = {Phase.FINDING: 0, Phase.REMEDIATION: 1, Phase.VERIFICATION: 2}
+        self.assertEqual(
+            [ranks[step.phase] for step in steps],
+            sorted(ranks[step.phase] for step in steps),
+        )
 
 
 if __name__ == "__main__":

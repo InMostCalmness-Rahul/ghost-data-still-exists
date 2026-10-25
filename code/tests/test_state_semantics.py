@@ -6,7 +6,7 @@ import unittest
 from datetime import datetime, timezone
 
 from ghostdata.absence import AbsenceVerdict, verify_absence
-from ghostdata.models import ActivityEvent, Observation
+from ghostdata.models import ActivityEvent, Observation, Ref
 from ghostdata.state import (
     EvidenceStrength,
     ResourceState,
@@ -138,6 +138,24 @@ class TestStateSemantics(unittest.TestCase):
         )
         snapshot = build_user_state("user_01", AUDIT, [future])
         self.assertEqual(snapshot.resources["account_01"].state, ResourceState.UNKNOWN)
+
+    def test_owner_linked_present_records_are_identifiable(self):
+        record = observation(
+            present=True,
+            refs=[],
+        )
+        record.refs.append(Ref("user_id", "user_01", "owner"))
+        self.assertEqual(_state_from_observation(record), ResourceState.PRESENT_IDENTIFIABLE)
+
+    def test_backup_restore_candidate_is_restorable(self):
+        backup = observation(
+            kind="BACKUP_ARCHIVE",
+            system="backup_service",
+            resource_id="backup_01",
+            attributes={"eligible": "true", "deletion_block": "false"},
+        )
+        backup.refs.append(Ref("user_id", "user_01", "owner"))
+        self.assertEqual(_state_from_observation(backup), ResourceState.PRESENT_RESTORABLE)
 
 
 if __name__ == "__main__":

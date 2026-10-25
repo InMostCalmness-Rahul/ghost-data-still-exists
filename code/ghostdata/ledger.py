@@ -41,7 +41,7 @@ def parse_all_evidence() -> tuple[list[EvidenceFile], list[ActivityEvent]]:
     """Parse every manifest file according to its suffix."""
     from .json_records import parse_records_document
     from .logfiles import parse_log_file
-    from .pdfdocs import parse_pdf_document, unreadable_png
+    from .pdfdocs import parse_pdf_document, parse_png_document
     from .sqlsnapshots import parse_sql_snapshot
     from .textdocs import parse_txt_document
 
@@ -79,7 +79,8 @@ def parse_all_evidence() -> tuple[list[EvidenceFile], list[ActivityEvent]]:
                 skeleton.origin,
             )
         elif suffix == ".png":
-            ef = unreadable_png(
+            ef = parse_png_document(
+                real_path,
                 skeleton.file_id,
                 dataset_relative,
                 skeleton.captured_at,
