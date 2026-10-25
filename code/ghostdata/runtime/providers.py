@@ -74,6 +74,24 @@ def _usage(provider: str, model: str, raw: dict[str, Any]) -> ModelUsage:
     )
 
 
+_MAX_ERROR_BODY = 500
+
+
+def _sanitize_error_body(raw: bytes | None) -> str:
+    """Return a truncated provider error reason; never log keys or URLs."""
+    if raw is None:
+        return ""
+    try:
+        text = raw.decode("utf-8", errors="replace")
+    except (UnicodeDecodeError, AttributeError):
+        return "<unreadable error body>"
+    text = "".join(ch if ch.isprintable() or ch in "\n\r\t" else " " for ch in text)
+    text = " ".join(text.split())
+    if len(text) > _MAX_ERROR_BODY:
+        text = text[:_MAX_ERROR_BODY] + "\u2026"
+    return text
+
+
 def _post_json(url: str, headers: dict[str, str], payload: dict[str, Any]) -> dict[str, Any]:
     request = urllib.request.Request(
         url,
@@ -85,9 +103,23 @@ def _post_json(url: str, headers: dict[str, str], payload: dict[str, Any]) -> di
         with urllib.request.urlopen(request, timeout=30) as response:
             body = response.read().decode("utf-8")
     except urllib.error.HTTPError as exc:
-        raise RuntimeModelError(
-            f"provider request failed: HTTP {exc.code}"
-        ) from exc
+        error_body = b""
+        reader = getattr(exc, "read", None)
+        if callable(reader):
+            try:
+                error_body = reader() or b""
+            except (OSError, ValueError):
+                error_body = b""
+        error_text = _sanitize_error_body(error_body)
+        # Never include the request URL: the Gemini API key travels in the query
+        # string, and authorization headers carry bearer tokens. Provider error
+        # bodies contain the actual failure reason (for example quota exhaustion
+        # or invalid credentials) without revealing secrets.
+        if error_text:
+            raise RuntimeModelError(
+                f"provider request failed: HTTP {exc.code}; {error_text}"
+            ) from exc
+        raise RuntimeModelError(f"provider request failed: HTTP {exc.code}") from exc
     except (urllib.error.URLError, TimeoutError) as exc:
         raise RuntimeModelError(f"provider request failed: {exc.__class__.__name__}") from exc
     try:
@@ -147,7 +179,7 @@ def _gemini_response(config: ProviderConfig, key: str, messages: list[dict[str, 
 class ProviderRouter:
     """Route runtime requests through configured providers in priority order."""
 
-    def __init__(self, order: tuple[str, ...] = ("gemini", "openrouter", "groq")) -> None:
+    def __init__(self, order: tuple[str, ...] = ("gemini", "openrouter")) -> None:
         unknown = set(order) - set(PROVIDERS)
         if unknown:
             raise ValueError(f"unknown providers: {sorted(unknown)}")

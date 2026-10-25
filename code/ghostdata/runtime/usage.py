@@ -52,7 +52,7 @@ class UsageVerifier:
     """
 
     def __init__(self, router: ProviderRouter | None = None) -> None:
-        self.router = router or ProviderRouter(("groq", "openrouter", "gemini"))
+        self.router = router or ProviderRouter(("gemini", "openrouter"))
 
     def verify(self, case_id: str, records: list[UsageRecord]) -> UsageRecord | None:
         payload = json.dumps([asdict(record) for record in records], sort_keys=True)

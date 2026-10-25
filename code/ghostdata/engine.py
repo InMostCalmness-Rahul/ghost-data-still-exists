@@ -40,6 +40,67 @@ def normalize_system_id(system: str) -> str:
     return SYSTEM_ID_MAP.get(system, system)
 
 
+def _observation_candidate(obs: Observation) -> dict[str, Any]:
+    """Return provenance-preserving, non-authoritative tool output."""
+    return {
+        "evidence_id": obs.file_id,
+        "source_path": obs.source_path,
+        "resource_id": obs.resource_id,
+        "system_id": normalize_system_id(obs.system or ""),
+        "resource_kind": obs.kind,
+        "capture_time": obs.captured_at.isoformat() if obs.captured_at else None,
+        "observation_time": obs.observed_at.isoformat() if obs.observed_at else None,
+        "identity_refs": [
+            {"kind": ref.kind, "value": ref.value, "role": ref.role}
+            for ref in obs.refs
+        ],
+        "attributes": dict(obs.attributes),
+        "present": obs.present,
+    }
+
+
+def _within_audit(obs: Observation, audit_at: datetime) -> bool:
+    return bool(
+        obs.captured_at
+        and obs.captured_at <= audit_at
+        and (obs.observed_at is None or obs.observed_at <= audit_at)
+    )
+
+
+def _validated_discoveries(
+    tool_results: list[dict[str, Any]],
+    user_id: str,
+    identity_index: Any,
+    audit_at: datetime,
+    ledger: EvidenceLedger,
+) -> list[Observation]:
+    """Accept only real, cutoff-valid observations with a unique owner link."""
+    by_key = {
+        (obs.file_id, obs.resource_id): obs
+        for obs in ledger.observations()
+        if _within_audit(obs, audit_at)
+    }
+    accepted: list[Observation] = []
+    for entry in tool_results:
+        result = entry.get("result", {})
+        if not isinstance(result, dict):
+            continue
+        for candidate in result.get("candidates", []):
+            if not isinstance(candidate, dict):
+                continue
+            key = (candidate.get("evidence_id"), candidate.get("resource_id"))
+            obs = by_key.get(key)
+            if obs is None:
+                continue
+            owners = set()
+            for ref in obs.refs:
+                if ref.role == "owner":
+                    owners.update(identity_index.resolve_ref(ref.kind, ref.value))
+            if owners == {user_id}:
+                accepted.append(obs)
+    return list({(obs.file_id, obs.resource_id): obs for obs in accepted}.values())
+
+
 @dataclass
 class CaseResult:
     case_id: str
@@ -102,6 +163,13 @@ def evaluate_case(
             notes=[f"Email {case.email} not resolved to any user"],
         )
 
+    if len(users) != 1:
+        return CaseResult(
+            case_id=case.case_id,
+            deletion_status="INCOMPLETE",
+            steps=[],
+            notes=[f"Ambiguous email identity: {sorted(users)}"],
+        )
     user_id = next(iter(users))
 
     # 3. Get observations for this user at/before audit_at
@@ -120,20 +188,51 @@ def evaluate_case(
             args: dict[str, Any],
             _context: dict[str, Any],
         ) -> dict[str, Any]:
-            del args
+            if not isinstance(args, dict):
+                raise ValueError("investigation args must be an object")
+            query = args.get("query", "")
+            if query is not None and not isinstance(query, str):
+                raise ValueError("query must be a string")
+            requested_resource = args.get("resource_id")
+            if requested_resource is not None and not isinstance(requested_resource, str):
+                raise ValueError("resource_id must be a string")
+
+            def candidates(predicate) -> list[dict[str, Any]]:
+                return [
+                    _observation_candidate(obs)
+                    for obs in ledger.observations()
+                    if _within_audit(obs, audit_at)
+                    and predicate(obs)
+                ][:20]
+
             if action == "search_evidence":
+                needle = query.strip().lower()
+                return {"executed": True, "candidates": candidates(
+                    lambda obs: not needle or needle in json.dumps(
+                        _observation_candidate(obs), sort_keys=True, default=str
+                    ).lower()
+                )}
+            if action == "resolve_identity":
                 return {
                     "executed": True,
-                    "observation_count": len(usable_obs),
-                    "resource_ids": sorted({obs.resource_id for obs in usable_obs}),
+                    "resolved_user_ids": [user_id],
+                    "candidates": candidates(
+                        lambda obs: any(
+                            ref.role == "owner"
+                            and user_id in identity_index.resolve_ref(ref.kind, ref.value)
+                            for ref in obs.refs
+                        )
+                    )[:20],
                 }
-            if action == "resolve_identity":
-                return {"executed": True, "resolved_user_ids": [user_id]}
             if action == "find_corroboration":
                 return {
                     "executed": True,
-                    "owner_linked_resources": sorted({obs.resource_id for obs in usable_obs}),
-                    "activity_candidates": sorted(user_index.activity_candidates_for_user(user_id)),
+                    "candidates": candidates(
+                        lambda obs: (
+                            requested_resource is None
+                            or obs.resource_id == requested_resource
+                        )
+                    ),
                 }
             if action == "check_recreate_path":
                 resource_ids = {obs.resource_id for obs in usable_obs}
@@ -144,16 +243,23 @@ def evaluate_case(
                 ]
                 return {
                     "executed": True,
-                    "event_count": len(events),
-                    "event_types": sorted({event.event_type for event in events}),
+                    "events": [
+                        {
+                            "activity_id": event.activity_id,
+                            "resource_id": event.resource_id,
+                            "event_type": event.event_type,
+                            "event_time": event.event_time.isoformat() if event.event_time else None,
+                            "reported_result": event.reported_result,
+                        }
+                        for event in events[:20]
+                    ],
                 }
             if action == "extract_multimodal":
                 return {
                     "executed": True,
-                    "multimodal_files": sorted({
-                        obs.file_id for obs in usable_obs
-                        if obs.source_kind in ("pdf", "png")
-                    }),
+                    "candidates": candidates(
+                        lambda obs: obs.source_kind in ("pdf", "png")
+                    ),
                 }
             raise ValueError(f"unsupported investigation action: {action}")
 
@@ -167,6 +273,16 @@ def evaluate_case(
             },
             tool_executor=execute_investigation,
         )
+        discovered = _validated_discoveries(
+            runtime_agent.last_tool_results,
+            user_id,
+            identity_index,
+            audit_at,
+            ledger,
+        )
+        usable_obs = list({
+            (obs.file_id, obs.resource_id): obs for obs in [*usable_obs, *discovered]
+        }.values())
 
     # 4. Build state snapshot
     snapshot = build_user_state(user_id, audit_at, usable_obs, ledger.activity)

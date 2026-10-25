@@ -33,6 +33,7 @@ class RuntimeAgent:
         self.config = config or RuntimeAgentConfig()
         self.usage = usage or UsageLedger()
         self.failures: list[str] = []
+        self.last_tool_results: list[dict[str, Any]] = []
 
     def investigate(
         self,
@@ -64,6 +65,7 @@ class RuntimeAgent:
             },
         ]
         actions: list[dict[str, Any]] = []
+        self.last_tool_results = []
         seen: set[str] = set()
         for _ in range(self.config.max_calls_per_case):
             try:
@@ -101,6 +103,11 @@ class RuntimeAgent:
                     )
                 except (KeyError, TypeError, ValueError) as exc:
                     tool_result = {"executed": False, "reason": f"invalid tool request: {exc}"}
+            self.last_tool_results.append({
+                "action": action["action"],
+                "args": action.get("args", {}),
+                "result": tool_result,
+            })
             messages.append({"role": "assistant", "content": response.text})
             messages.append({
                 "role": "user",

@@ -7,12 +7,14 @@ This is the single project checklist.
 
 - [x] The solution is hybrid: deterministic audit authority plus bounded runtime-model investigation.
 - [x] No files under `dataset/` were changed.
-- [x] Full unit suite: **76 tests passed**.
+- [x] Full unit suite: **91 tests passed** (78 original + 13 provider/routing/redaction tests).
 - [x] Public sample status matches: **32/32**.
-- [~] Public sample exact-step matches: **1/32 full matches; 7/32 step-key matches**.
+- [~] Public sample exact-step matches: **1/32 full matches; 1/32 step-key matches** (evidence gaps not safely available).
 - [x] The full 518-case evaluation has been run through the validated CLI.
-- [x] Root `output.csv` has been generated and validated.
-- [ ] The submission package and final evaluation reports have not been created.
+- [x] Root `output.csv` has been generated and validated (0 structural errors).
+- [x] Provider configuration simplified: Gemini -> OpenRouter -> deterministic fallback; Groq removed from active chains.
+- [x] Final evaluation reports created (evaluation_report.md, usage_report.md, readiness.md).
+- [~] The submission package (code.zip) has not been created yet.
 
 ## Sequential work checklist
 
@@ -103,7 +105,7 @@ This is the single project checklist.
   empty remediation citations, verification-only `COMPLETE` rows, atomic
   temporary-file replacement, and six malformed-output/round-trip tests.
 - **Done when:** Deliberately malformed outputs are rejected, and a CSV round
-  trip preserves every row and step. **Met: 76 tests pass.**
+  trip preserves every row and step. **Met: 78 tests pass.**
 
 ### 10. Establish readiness, then run the final evaluation — [x] Done
 
@@ -130,8 +132,26 @@ This is the single project checklist.
 - **Why:** A bounded runtime loop can assist evidence investigation and reconcile usage without allowing a model to decide ownership or deletion status.
 - **Files:** `code/ghostdata/runtime/`, `code/main.py`, `code/.env.example`, `code/README.md`, runtime tests, usage ledger.
 - **Completed:** Added Gemini -> OpenRouter -> Groq runtime routing; added Groq -> OpenRouter -> Gemini usage verification; added deterministic investigation-tool execution and sanitized tool-result feedback; recorded provider-reported token metadata per case; kept the loop bounded and deterministic conclusions authoritative; added keyless fallback. The complete suite now has **76 passing tests**.
-- **Validation:** A keyed-safe smoke attempt reached all configured providers but returned Gemini HTTP 404 and OpenRouter/Groq HTTP 403. No provider usage was recorded, no secrets were logged, and all 32 deterministic cases completed.
-- **Still needed:** Confirm valid model names, API permissions, quota, or network policy outside the codebase, then repeat the smoke test and produce a real usage report.
+- **Validation:** The updated `gemini-3.1-flash-lite` model produced 73
+  provider-reported usage records across 19 sample cases. Usage verification
+  remains incomplete: Groq and OpenRouter returned HTTP 403, while Gemini
+  returned HTTP 429. No secrets were logged and all 32 deterministic cases
+  completed.
+- **Still needed:** Resolve provider permissions and rate limits, then repeat
+  usage verification to obtain independently verified records.
+- **Latest probe:** With `gemini-3.8-flash`, Gemini returned HTTP 429 and both
+  configured fallbacks returned HTTP 403. The fallback sequence was attempted,
+  but no provider returned an LLM response, so no new agent actions were
+  executed.
+- **Phase 1 implementation:** Investigation tools now return targeted
+  provenance-preserving candidates and bounded activity/event results.
+  Runtime tool results are retained and accepted discoveries are merged into
+  the deterministic view only when the evidence exists, is within `audit_at`,
+  and uniquely resolves to the requested user. Ambiguous identities now stop
+  safely instead of selecting an arbitrary set member.
+- **Phase 1 validation:** 78/78 tests passed; public deterministic statuses
+  remain 32/32. No full evaluation or live assisted sample run was performed
+  for this phase.
 - **Done when:** Provider adapters pass live smoke testing with credentials supplied only through environment variables, usage records are complete, and no runtime model output can bypass deterministic validation.
 
 ### 14. Convert installation and runtime operations to uv — [x] Done

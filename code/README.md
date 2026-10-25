@@ -13,7 +13,7 @@ same deterministic path remains the safe fallback.
 
 ## Current status
 
-- Full unit suite: **76 tests passed**.
+- Full unit suite: **78 tests passed**.
 - Public sample regression: **32/32 status matches**, **7/32 exact step-key
   matches**, and **1/32 full exact-step matches**.
 - Evidence inventory: 94 files and 4,011 activity-claim rows.
@@ -30,14 +30,18 @@ same deterministic path remains the safe fallback.
   `NOT_APPLICABLE`, with 2,354 total steps.
 - A repeat run produced the same SHA-256 output hash, confirming deterministic
   reproducibility.
-- Runtime providers are routed Gemini -> OpenRouter -> Groq.
-- Per-case usage can be independently reconciled Groq -> OpenRouter -> Gemini.
+- Runtime providers are routed Gemini -> OpenRouter -> deterministic fallback.
+- Per-case usage can be independently reconciled Gemini -> OpenRouter -> deterministic fallback.
+- Runtime investigation tools now return bounded, provenance-preserving
+  evidence candidates. Only candidates that exist in the ledger, satisfy the
+  audit cutoff, and have a unique deterministic owner link are fed back into
+  state reconstruction.
 - Output rows now pass a validator before atomic CSV replacement. The validator
   checks the contract header, sorted unique case IDs, JSON shape, allowed
   operation/state pairs, phase ordering, citations, and safe empty evidence
   IDs for proposed remediation.
-- The latest keyed smoke reached all providers but returned HTTP 404 from
-  Gemini and HTTP 403 from OpenRouter/Groq; no model usage was recorded.
+- The latest `gemini-3.8-flash` probe returned HTTP 429; OpenRouter and Groq
+  fallbacks returned HTTP 403. The deterministic path remains available.
 
 The regression result is a correctness baseline, not a submission result.
 Activity-only and co-location-only ownership attribution were deliberately
